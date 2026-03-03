@@ -16,10 +16,9 @@ Budgetivia is a personal finance and budgeting project designed to help users tr
   - [x] Display warning UI component (toast/alert/banner)
 
 ## Reports Section (Pārskati)
-- [ ] Design reports layout
-- [ ] Implement data visualization
-- [ ] Add filtering options
-- [ ] Generate summary statistics
+- [x] Design reports layout
+- [x] Implement data visualization
+- [x] Generate summary statistics
 
 ## Budget Section (Budžets)
 - [ ] Create budget overview page
@@ -62,3 +61,7 @@ Budgetivia is a personal finance and budgeting project designed to help users tr
 - [ ] Export data functionality
 - [ ] Email notifications
 - [ ] Data backup/restore
+
+## Bugs
+- [ ] Money does not carry over to new months
+- [ ] 
