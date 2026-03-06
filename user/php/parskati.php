@@ -321,6 +321,30 @@ $ratio = $alltime['expense'] > 0 ? round($alltime['income'] / $alltime['expense'
     </main>
 </div>
 
+<!-- Mobile bottom navigation (only visible on small screens) -->
+<nav class="mobile-bottom-nav">
+    <a href="calendar.php" class="mobile-nav-item">
+        <i class="fa-solid fa-calendar"></i>
+        <span>Kalendārs</span>
+    </a>
+    <a href="parskati.php" class="mobile-nav-item active">
+        <i class="fa-solid fa-chart-pie"></i>
+        <span>Pārskati</span>
+    </a>
+    <a href="#" class="mobile-nav-item">
+        <i class="fa-solid fa-wallet"></i>
+        <span>Budžets</span>
+    </a>
+    <a href="#" class="mobile-nav-item">
+        <i class="fa-solid fa-gear"></i>
+        <span>Iestatījumi</span>
+    </a>
+    <a href="logout.php" class="mobile-nav-item">
+        <i class="fa-solid fa-right-from-bracket"></i>
+        <span>Iziet</span>
+    </a>
+</nav>
+
 <!-- Pass PHP data to JS -->
 <script>
     const labels        = <?php echo json_encode(array_column($monthly_data, 'label')); ?>;

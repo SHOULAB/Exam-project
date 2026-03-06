@@ -7,6 +7,7 @@ const savings = income.map((v, i) => parseFloat((v - expense[i]).toFixed(2)));
 const gridColor  = 'rgba(255,255,255,0.07)';
 const textColor  = '#94a3b8';
 const fontFamily = "'Segoe UI', sans-serif";
+const isMobile   = window.innerWidth <= 480;
 
 Chart.defaults.color = textColor;
 Chart.defaults.font.family = fontFamily;
@@ -24,8 +25,13 @@ const tooltipDefaults = {
     }
 };
 
+// On mobile show fewer x-axis ticks so labels don't overlap
+const xTicksMobile = isMobile
+    ? { color: textColor, maxTicksLimit: 4, maxRotation: 0 }
+    : { color: textColor };
+
 const scalesDefaults = {
-    x: { grid: { color: gridColor }, ticks: { color: textColor } },
+    x: { grid: { color: gridColor }, ticks: isMobile ? xTicksMobile : { color: textColor } },
     y: { grid: { color: gridColor }, ticks: { color: textColor, callback: v => '€' + v } }
 };
 
@@ -70,7 +76,7 @@ new Chart(document.getElementById('lineChart'), {
             backgroundColor: 'rgba(139,92,246,0.15)',
             borderWidth: 2.5,
             pointBackgroundColor: '#8b5cf6',
-            pointRadius: 4,
+            pointRadius: isMobile ? 2 : 4,
             fill: true,
             tension: 0.4
         }]
@@ -153,7 +159,7 @@ new Chart(document.getElementById('areaChart'), {
                 backgroundColor: 'rgba(16,185,129,0.15)',
                 borderWidth: 2,
                 pointBackgroundColor: '#10b981',
-                pointRadius: 3,
+                pointRadius: isMobile ? 2 : 3,
                 fill: true,
                 tension: 0.4
             },
@@ -164,7 +170,7 @@ new Chart(document.getElementById('areaChart'), {
                 backgroundColor: 'rgba(239,68,68,0.12)',
                 borderWidth: 2,
                 pointBackgroundColor: '#ef4444',
-                pointRadius: 3,
+                pointRadius: isMobile ? 2 : 3,
                 fill: true,
                 tension: 0.4
             }

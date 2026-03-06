@@ -1829,18 +1829,129 @@ body {
     color: var(--text-primary);
 }
 
-/* Responsive */
+/* Responsive — tablet (sidebar shrinks to icon-only at 768px) */
 @media (max-width: 1100px) {
-    .charts-grid { grid-template-columns: 1fr; }
-    .chart-full  { grid-column: 1; }
+    .charts-grid   { grid-template-columns: 1fr; }
+    .chart-full    { grid-column: 1; }
     .insights-grid { grid-template-columns: repeat(2, 1fr); }
     .summary-grid  { grid-template-columns: repeat(2, 1fr); }
 }
 
 @media (max-width: 768px) {
-    .reports-main { margin-left: 0; padding: 16px; width: 100%; }
-    .summary-grid  { grid-template-columns: 1fr; }
-    .insights-grid { grid-template-columns: 1fr; }
+    .reports-main  { margin-left: 80px; padding: 16px; width: calc(100% - 80px); }
+    .summary-grid  { grid-template-columns: repeat(2, 1fr); }
+    .insights-grid { grid-template-columns: repeat(2, 1fr); }
+
+    .summary-card-value { font-size: 20px; }
+    .chart-card         { padding: 16px; }
+    .chart-card-title   { font-size: 14px; }
+}
+
+/* Responsive — phone (≤ 480px): sidebar hidden, full-width single column */
+@media (max-width: 480px) {
+
+    /* Full width — sidebar hidden via the shared rule already set */
+    .reports-main {
+        margin-left: 0;
+        padding: 12px 10px;
+        width: 100%;
+        padding-bottom: 76px; /* room for mobile bottom nav */
+    }
+
+    .reports-title    { font-size: 20px; }
+    .reports-subtitle { font-size: 13px; }
+    .reports-header   { margin-bottom: 16px; }
+
+    /* Summary cards — 2-col compact */
+    .summary-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+
+    .summary-card {
+        padding: 14px 12px;
+        gap: 4px;
+        border-radius: 12px;
+    }
+
+    .summary-card-label { font-size: 10px; }
+    .summary-card-value { font-size: 18px; }
+    .summary-card-sub   { font-size: 11px; }
+
+    /* Insights — 2-col */
+    .insights-grid {
+        grid-template-columns: repeat(2, 1fr);
+        gap: 10px;
+        margin-bottom: 16px;
+    }
+
+    .insight-card {
+        padding: 12px;
+        gap: 10px;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .insight-icon {
+        width: 36px;
+        height: 36px;
+        font-size: 16px;
+        border-radius: 10px;
+    }
+
+    .insight-value { font-size: 15px; }
+    .insight-meta  { font-size: 10px; word-break: break-word; }
+
+    /* Charts — single column, reduced height so they don't feel huge */
+    .charts-grid {
+        grid-template-columns: 1fr;
+        gap: 14px;
+        margin-bottom: 14px;
+    }
+
+    .chart-full { grid-column: 1; }
+
+    .chart-card {
+        padding: 14px 12px;
+        border-radius: 14px;
+    }
+
+    .chart-card-header  { margin-bottom: 14px; }
+    .chart-card-title   { font-size: 13px; gap: 7px; }
+    .chart-card-subtitle{ font-size: 11px; }
+
+    /* Reduce canvas height on mobile so charts don't dwarf the screen */
+    .chart-wrapper canvas {
+        max-height: 220px !important;
+    }
+
+    /* Donut chart — tighter centering */
+    .chart-wrapper[style] {
+        max-width: 200px !important;
+    }
+
+    /* Legend rows wrap neatly */
+    .donut-legend  { gap: 8px; margin-top: 14px; }
+    .legend-item   { font-size: 12px; }
+    .legend-dot    { width: 10px; height: 10px; }
+
+    /* Mobile bottom navigation (reuse same nav from calendar) */
+    .mobile-bottom-nav {
+        display: flex;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        height: 64px;
+        background: rgba(15, 23, 42, 0.97);
+        backdrop-filter: blur(12px);
+        border-top: 1px solid var(--border);
+        z-index: 500;
+        justify-content: space-around;
+        align-items: center;
+        padding: 0 4px;
+    }
 }
 /* ============================================================
    MOBILE CALENDAR — single-column scrollable list (≤ 480px)
