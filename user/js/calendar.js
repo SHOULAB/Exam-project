@@ -235,3 +235,15 @@ calendarDays.forEach(day => {
         this.style.transform = 'scale(1)';
     });
 });
+// On mobile: scroll to today's day card automatically
+document.addEventListener('DOMContentLoaded', function() {
+    if (window.innerWidth <= 480) {
+        const todayCard = document.querySelector('.calendar-day-today');
+        if (todayCard) {
+            // Small delay so the page has rendered fully
+            setTimeout(() => {
+                todayCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }, 150);
+        }
+    }
+});

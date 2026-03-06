@@ -311,7 +311,7 @@ if ($next_month > 12) {
                         if ($is_today) $class .= ' calendar-day-today';
                         if ($has_transactions) $class .= ' calendar-day-has-data';
                         
-                        echo '<div class="' . $class . '" onclick="openDayModal(' . $day . ', ' . $current_month . ', ' . $current_year . ')">';
+                        echo '<div class="' . $class . '" data-day="' . $day . '" onclick="openDayModal(' . $day . ', ' . $current_month . ', ' . $current_year . ')">';
                         echo '<div class="calendar-day-number">' . $day . '</div>';
                         
                         if ($has_transactions) {
@@ -481,6 +481,35 @@ if ($next_month > 12) {
             </div>
         </div>
     </div>
+
+    <script>
+        const transactionsData = <?php echo json_encode($transactions); ?>;
+        const monthlyIncome = <?php echo $total_income; ?>;
+        const monthlyExpense = <?php echo $total_expense; ?>;
+    </script>
+    <!-- Mobile bottom navigation (only visible on small screens) -->
+    <nav class="mobile-bottom-nav">
+        <a href="calendar.php" class="mobile-nav-item active">
+            <i class="fa-solid fa-calendar"></i>
+            <span>Kalendārs</span>
+        </a>
+        <a href="parskati.php" class="mobile-nav-item">
+            <i class="fa-solid fa-chart-pie"></i>
+            <span>Pārskati</span>
+        </a>
+        <a href="#" class="mobile-nav-item">
+            <i class="fa-solid fa-wallet"></i>
+            <span>Budžets</span>
+        </a>
+        <a href="#" class="mobile-nav-item">
+            <i class="fa-solid fa-gear"></i>
+            <span>Iestatījumi</span>
+        </a>
+        <a href="logout.php" class="mobile-nav-item">
+            <i class="fa-solid fa-right-from-bracket"></i>
+            <span>Iziet</span>
+        </a>
+    </nav>
 
     <script>
         const transactionsData = <?php echo json_encode($transactions); ?>;
