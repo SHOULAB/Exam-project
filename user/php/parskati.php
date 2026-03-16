@@ -129,7 +129,7 @@ $ratio = $alltime['expense'] > 0 ? round($alltime['income'] / $alltime['expense'
                 <span class="nav-icon"><i class="fa-solid fa-chart-pie"></i></span>
                 <span class="nav-text">Pārskati</span>
             </a>
-            <a href="#" class="nav-item">
+            <a href="budget.php" class="nav-item">
                 <span class="nav-icon"><i class="fa-solid fa-wallet"></i></span>
                 <span class="nav-text">Budžets</span>
             </a>

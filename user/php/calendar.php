@@ -202,7 +202,7 @@ if ($next_month > 12) {
                     <span class="nav-icon"><i class="fa-solid fa-chart-pie"></i></span>
                     <span class="nav-text">Pārskati</span>
                 </a>
-                <a href="#" class="nav-item">
+                <a href="budget.php" class="nav-item">
                     <span class="nav-icon"><i class="fa-solid fa-wallet"></i></span>
                     <span class="nav-text">Budžets</span>
                 </a>
@@ -497,7 +497,7 @@ if ($next_month > 12) {
             <i class="fa-solid fa-chart-pie"></i>
             <span>Pārskati</span>
         </a>
-        <a href="#" class="mobile-nav-item">
+        <a href="budget.php" class="mobile-nav-item">
             <i class="fa-solid fa-wallet"></i>
             <span>Budžets</span>
         </a>
