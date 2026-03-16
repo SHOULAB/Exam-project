@@ -29,15 +29,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $start_date = $_POST['start_date'];
             $end_date = $_POST['end_date'];
             $warning_threshold = floatval($_POST['warning_threshold']);
-            $category = trim($_POST['category']);
 
             if (empty($budget_name) || $budget_amount <= 0) {
                 $error = 'Lūdzu aizpildiet visus obligātos laukus!';
             } else {
                 $stmt = mysqli_prepare($savienojums, 
-                    "INSERT INTO BU_budgets (user_id, budget_name, budget_amount, budget_period, start_date, end_date, warning_threshold, category, created_at) 
-                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())");
-                mysqli_stmt_bind_param($stmt, "isdssdds", $user_id, $budget_name, $budget_amount, $budget_period, $start_date, $end_date, $warning_threshold, $category);
+                    "INSERT INTO BU_budgets (user_id, budget_name, budget_amount, budget_period, start_date, end_date, warning_threshold, created_at) 
+                     VALUES (?, ?, ?, ?, ?, ?, ?, NOW())");
+                mysqli_stmt_bind_param($stmt, "isdsssd", $user_id, $budget_name, $budget_amount, $budget_period, $start_date, $end_date, $warning_threshold);
                 
                 if (mysqli_stmt_execute($stmt)) {
                     $success = 'Budžets veiksmīgi pievienots!';
@@ -98,18 +97,8 @@ if ($budgets_result) {
                        WHERE user_id = ? AND type = 'expense' 
                        AND date BETWEEN ? AND ?";
         
-        if (!empty($row['category'])) {
-            $spent_query .= " AND category = ?";
-        }
-        
         $spent_stmt = mysqli_prepare($savienojums, $spent_query);
-        
-        if (!empty($row['category'])) {
-            mysqli_stmt_bind_param($spent_stmt, "isss", $user_id, $row['start_date'], $row['end_date'], $row['category']);
-        } else {
-            mysqli_stmt_bind_param($spent_stmt, "iss", $user_id, $row['start_date'], $row['end_date']);
-        }
-        
+        mysqli_stmt_bind_param($spent_stmt, "iss", $user_id, $row['start_date'], $row['end_date']);
         mysqli_stmt_execute($spent_stmt);
         $spent_result = mysqli_stmt_get_result($spent_stmt);
         $spent_row = mysqli_fetch_assoc($spent_result);
@@ -151,6 +140,278 @@ $total_remaining = $total_budget_amount - $total_spent;
     <link rel="stylesheet" href="../css/style.css">
     <link rel="icon" href="../../assets/image/logo.png" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+    <style>
+        .budget-container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .budget-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+        }
+
+        .budget-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--primary);
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .budgets-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+            margin-top: 30px;
+        }
+
+        .budget-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .budget-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+        }
+
+        .budget-card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 16px;
+        }
+
+        .budget-card-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin-bottom: 4px;
+        }
+
+        .budget-card-period {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .budget-status {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .status-active {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--success);
+        }
+
+        .status-expired {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+
+        .status-warning {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--warning);
+        }
+
+        .budget-amounts {
+            margin: 20px 0;
+        }
+
+        .budget-amount-row {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+
+        .amount-label {
+            color: var(--text-secondary);
+        }
+
+        .amount-value {
+            font-weight: 600;
+        }
+
+        .amount-spent {
+            color: var(--danger);
+        }
+
+        .amount-remaining {
+            color: var(--success);
+        }
+
+        .budget-progress {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 16px 0;
+        }
+
+        .budget-progress-bar {
+            height: 100%;
+            transition: width 0.3s ease;
+            border-radius: 4px;
+        }
+
+        .progress-safe {
+            background: linear-gradient(135deg, var(--success) 0%, #34d399 100%);
+        }
+
+        .progress-warning {
+            background: linear-gradient(135deg, var(--warning) 0%, #f97316 100%);
+        }
+
+        .progress-danger {
+            background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%);
+        }
+
+        .budget-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 16px;
+            padding-top: 16px;
+            border-top: 1px solid var(--border);
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 13px;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal.modal-open {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-content {
+            background: var(--bg-dark);
+            border-radius: 16px;
+            padding: 32px;
+            max-width: 600px;
+            width: 90%;
+            max-height: 90vh;
+            overflow-y: auto;
+            border: 1px solid var(--border);
+            animation: slideUp 0.3s ease;
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .modal-close {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-size: 24px;
+            cursor: pointer;
+            padding: 8px;
+            transition: color 0.3s ease;
+        }
+
+        .modal-close:hover {
+            color: var(--text-primary);
+        }
+
+        .form-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-icon {
+            font-size: 64px;
+            margin-bottom: 16px;
+            opacity: 0.5;
+        }
+
+        @media (max-width: 768px) {
+            .budgets-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .budget-header {
+                flex-direction: column;
+                gap: 16px;
+            }
+
+            .form-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="budget-container">
@@ -315,12 +576,6 @@ $total_remaining = $total_budget_amount - $total_spent;
                     <input type="text" name="budget_name" class="form-input" placeholder="piem. Nedēļas nogales budžets" required>
                 </div>
 
-                <div class="form-group">
-                    <label class="form-label">Kategorija (neobligāti)</label>
-                    <input type="text" name="category" class="form-input" placeholder="piem. Izklaides, Pārtika, Transports">
-                    <span class="form-hint">Ja norādīts, budžets sekos tikai šīs kategorijas izdevumiem</span>
-                </div>
-
                 <div class="form-row">
                     <div class="form-group">
                         <label class="form-label">Summa (€) *</label>
@@ -407,6 +662,46 @@ $total_remaining = $total_budget_amount - $total_spent;
     </div>
 
     <script src="../js/script.js"></script>
-    <script src="../js/budget.js"></script>
+    <script>
+        function openAddModal() {
+            document.getElementById('addModal').classList.add('modal-open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeAddModal() {
+            document.getElementById('addModal').classList.remove('modal-open');
+            document.body.style.overflow = 'auto';
+        }
+
+        function openEditModal(budget) {
+            document.getElementById('edit_budget_id').value = budget.id;
+            document.getElementById('edit_budget_name').value = budget.budget_name;
+            document.getElementById('edit_budget_amount').value = budget.budget_amount;
+            document.getElementById('edit_warning_threshold').value = budget.warning_threshold;
+            document.getElementById('editModal').classList.add('modal-open');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').classList.remove('modal-open');
+            document.body.style.overflow = 'auto';
+        }
+
+        // Close modals when clicking outside
+        window.onclick = function(event) {
+            if (event.target.classList.contains('modal')) {
+                event.target.classList.remove('modal-open');
+                document.body.style.overflow = 'auto';
+            }
+        }
+
+        // Close with ESC key
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeAddModal();
+                closeEditModal();
+            }
+        });
+    </script>
 </body>
 </html>
