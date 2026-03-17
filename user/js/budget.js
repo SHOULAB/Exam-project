@@ -72,7 +72,7 @@ document.addEventListener('keydown', function (e) {
 /**
  * Day index mapping (JS Date.getDay(): 0 = Sunday … 6 = Saturday)
  */
-const DAY_NAMES_SHORT = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const DAY_NAMES_SHORT = ['Sv', 'P', 'O', 'T', 'C', 'Pk', 'S'];
 
 /**
  * Given an array of day indices (0–6), calculates the start and end dates
@@ -179,8 +179,8 @@ function updateRecurringPreview(selectedDays, previewEl, startInput, endInput) {
     const label = friendlyDayList(selectedDays);
     previewEl.innerHTML =
         `<i class="fa-solid fa-rotate" style="color:var(--primary)"></i>` +
-        ` Recurring every <strong>${label}</strong> — ` +
-        `next period: <strong>${dates.start}</strong> → <strong>${dates.end}</strong>`;
+        `<strong>${label}</strong> — ` +
+        `<strong>${dates.start}</strong> → <strong>${dates.end}</strong>`;
     previewEl.style.display = 'flex';
 
     // Auto-fill and lock the date pickers
@@ -190,22 +190,25 @@ function updateRecurringPreview(selectedDays, previewEl, startInput, endInput) {
 
 /** Resets the Add modal's recurring section to its pristine off-state. */
 function resetRecurringSection() {
-    const toggle    = document.getElementById('add_recurring_toggle');
-    const container = document.getElementById('add_recurring_days_container');
-    const preview   = document.getElementById('add_recurring_preview');
-    const hidden    = document.getElementById('add_recurring_days');
+    const toggle     = document.getElementById('add_recurring_toggle');
+    const container  = document.getElementById('add_recurring_days_container');
+    const preview    = document.getElementById('add_recurring_preview');
+    const hidden     = document.getElementById('add_recurring_days');
     const startInput = document.getElementById('add_start_date');
     const endInput   = document.getElementById('add_end_date');
+    const datesGroup = document.getElementById('add_dates_group');
 
     if (toggle)    toggle.checked = false;
     if (container) {
         container.style.display = 'none';
         container.querySelectorAll('.day-pill').forEach(p => p.classList.remove('selected'));
     }
-    if (preview)   { preview.innerHTML = ''; preview.style.display = 'none'; }
-    if (hidden)    hidden.value = '';
-    if (startInput) { startInput.readOnly = false; }
-    if (endInput)   { endInput.readOnly   = false; }
+    if (preview)    { preview.innerHTML = ''; preview.style.display = 'none'; }
+    if (hidden)     hidden.value = '';
+    // Always restore the date fields when resetting
+    if (datesGroup) datesGroup.style.display = 'block';
+    if (startInput) { startInput.readOnly = false; startInput.required = true; startInput.value = ''; }
+    if (endInput)   { endInput.readOnly   = false; endInput.required   = true; endInput.value   = ''; }
 }
 
 
@@ -223,16 +226,24 @@ document.addEventListener('DOMContentLoaded', function () {
     const addEnd       = document.getElementById('add_end_date');
 
     if (addToggle && addContainer) {
+        const addDatesGroup = document.getElementById('add_dates_group');
+
         addToggle.addEventListener('change', function () {
             if (this.checked) {
                 addContainer.style.display = 'block';
+                // Hide the manual date fields — PHP calculates dates from recurring_days
+                if (addDatesGroup) addDatesGroup.style.display = 'none';
+                if (addStart) { addStart.required = false; addStart.value = ''; }
+                if (addEnd)   { addEnd.required   = false; addEnd.value   = ''; }
             } else {
                 addContainer.style.display = 'none';
                 addContainer.querySelectorAll('.day-pill').forEach(p => p.classList.remove('selected'));
                 if (addPreview) { addPreview.innerHTML = ''; addPreview.style.display = 'none'; }
                 if (addHidden)  addHidden.value = '';
-                if (addStart)   { addStart.readOnly = false; addStart.value = ''; }
-                if (addEnd)     { addEnd.readOnly   = false; addEnd.value   = ''; }
+                // Restore manual date fields
+                if (addDatesGroup) addDatesGroup.style.display = 'block';
+                if (addStart) { addStart.required = true;  addStart.readOnly = false; addStart.value = ''; }
+                if (addEnd)   { addEnd.required   = true;  addEnd.readOnly   = false; addEnd.value   = ''; }
             }
         });
 

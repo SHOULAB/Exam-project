@@ -14,6 +14,16 @@ $username = $_SESSION['username'];
 $error    = '';
 $success  = '';
 
+// Flash messages from Post-Redirect-Get
+$msg_map = [
+    'added'   => 'Budžets veiksmīgi pievienots!',
+    'deleted' => 'Budžets veiksmīgi dzēsts!',
+    'updated' => 'Budžets veiksmīgi atjaunināts!',
+];
+if (isset($_GET['msg']) && array_key_exists($_GET['msg'], $msg_map)) {
+    $success = $msg_map[$_GET['msg']];
+}
+
 // ─── Helper: "1,5,6" → "Mon, Fri, Sat" ──────────────────────────────────────
 function recurringDayLabel(string $csv): string {
     $names = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
@@ -142,11 +152,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
                 $recurring_days, $is_recurring);
 
             if (mysqli_stmt_execute($stmt)) {
-                $success = 'Budžets veiksmīgi pievienots!';
+                mysqli_stmt_close($stmt);
+                header('Location: budget.php?msg=added');
+                exit();
             } else {
                 $error = 'Kļūda pievienojot budžetu!';
+                mysqli_stmt_close($stmt);
             }
-            mysqli_stmt_close($stmt);
         }
     }
 
@@ -157,10 +169,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             "DELETE FROM BU_budgets WHERE id = ? AND user_id = ?");
         mysqli_stmt_bind_param($stmt, "ii", $budget_id, $user_id);
 
-        $success = mysqli_stmt_execute($stmt)
-            ? 'Budžets veiksmīgi dzēsts!'
-            : 'Kļūda dzēšot budžetu!';
-        mysqli_stmt_close($stmt);
+        if (mysqli_stmt_execute($stmt)) {
+            mysqli_stmt_close($stmt);
+            header('Location: budget.php?msg=deleted');
+            exit();
+        } else {
+            $error = 'Kļūda dzēšot budžetu!';
+            mysqli_stmt_close($stmt);
+        }
     }
 
     // ── UPDATE ────────────────────────────────────────────────────────────────
@@ -188,10 +204,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $recurring_days, $is_recurring,
             $budget_id, $user_id);
 
-        $success = mysqli_stmt_execute($stmt)
-            ? 'Budžets veiksmīgi atjaunināts!'
-            : 'Kļūda atjauninot budžetu!';
-        mysqli_stmt_close($stmt);
+        if (mysqli_stmt_execute($stmt)) {
+            mysqli_stmt_close($stmt);
+            header('Location: budget.php?msg=updated');
+            exit();
+        } else {
+            $error = 'Kļūda atjauninot budžetu!';
+            mysqli_stmt_close($stmt);
+        }
     }
 }
 
@@ -385,7 +405,7 @@ $total_remaining = $total_budget_amount - $total_spent;
                                         <?php if (!empty($budget['recurring_days'])): ?>
                                             <span class="recurring-card-badge"
                                                   title="Recurring: <?php echo htmlspecialchars(recurringDayLabel($budget['recurring_days'])); ?>">
-                                                <i class="fa-solid fa-rotate"></i>
+                                                <i class="fa-solid fa-arrows-rotate"></i>
                                                 <?php echo htmlspecialchars(recurringDayLabel($budget['recurring_days'])); ?>
                                             </span>
                                         <?php endif; ?>
@@ -454,6 +474,7 @@ $total_remaining = $total_budget_amount - $total_spent;
             </div>
             <form method="POST" class="modal-form">
                 <input type="hidden" name="action" value="add">
+                <input type="hidden" name="budget_period" value="custom">
 
                 <div class="form-group">
                     <label class="form-label">Budžeta nosaukums *</label>
@@ -462,49 +483,40 @@ $total_remaining = $total_budget_amount - $total_spent;
                 </div>
 
                 <div class="form-group">
-                    <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
-                        <div>
-                            <label class="form-label">Summa (€) *</label>
-                            <input type="number" name="budget_amount" class="form-input"
-                                   step="0.01" min="0" placeholder="100.00" required>
-                        </div>
-                        <div>
-                            <label class="form-label">Periods *</label>
-                            <select name="budget_period" class="form-input" required>
-                                <option value="daily">Dienas</option>
-                                <option value="weekly">Nedēļas</option>
-                                <option value="monthly" selected>Mēneša</option>
-                                <option value="custom">Pielāgots</option>
-                            </select>
-                        </div>
-                    </div>
+                    <label class="form-label">Summa (€) *</label>
+                    <input type="number" name="budget_amount" class="form-input"
+                           step="0.01" min="0" placeholder="100.00" required>
                 </div>
 
                 <!-- ── RECURRING SCHEDULE ─────────────────────────────────── -->
                 <div class="form-group">
-                    <label class="checkbox-label"
-                           style="cursor:pointer; display:flex; align-items:center; gap:10px;">
-                        <input type="checkbox" id="add_recurring_toggle" class="checkbox-input">
-                        <span style="font-weight:600; font-size:14px;">
-                            <i class="fa-solid fa-rotate"
-                               style="color:var(--primary); margin-right:4px;"></i>
-                            Recurring weekly schedule
-                        </span>
-                    </label>
-                    <small style="color:var(--text-secondary); font-size:12px;
-                                  margin-top:4px; display:block;">
-                        Choose specific days — the budget will auto-refresh every week on those days.
-                    </small>
+                    <div class="recurring-toggle-row">
+                        <div class="recurring-toggle-label">
+                            <div class="recurring-toggle-icon">
+                                <i class="fa-solid fa-arrows-rotate"></i>
+                            </div>
+                            <div>
+                                <div class="recurring-toggle-title">Regulārs nedēļas grafiks</div>
+                                <div class="recurring-toggle-sub">Automātiska atsvaidzināšana katru nedēļu atlasītajās dienās</div>
+                            </div>
+                        </div>
+                        <label class="custom-toggle">
+                            <input type="checkbox" id="add_recurring_toggle">
+                            <span class="custom-toggle-track">
+                                <span class="custom-toggle-thumb"></span>
+                            </span>
+                        </label>
+                    </div>
 
                     <div id="add_recurring_days_container" style="display:none; margin-top:12px;">
                         <div class="day-picker">
-                            <button type="button" class="day-pill" data-day="1">Mon</button>
-                            <button type="button" class="day-pill" data-day="2">Tue</button>
-                            <button type="button" class="day-pill" data-day="3">Wed</button>
-                            <button type="button" class="day-pill" data-day="4">Thu</button>
-                            <button type="button" class="day-pill" data-day="5">Fri</button>
-                            <button type="button" class="day-pill" data-day="6">Sat</button>
-                            <button type="button" class="day-pill" data-day="0">Sun</button>
+                            <button type="button" class="day-pill" data-day="1">P</button>
+                            <button type="button" class="day-pill" data-day="2">O</button>
+                            <button type="button" class="day-pill" data-day="3">T</button>
+                            <button type="button" class="day-pill" data-day="4">C</button>
+                            <button type="button" class="day-pill" data-day="5">Pk</button>
+                            <button type="button" class="day-pill" data-day="6">S</button>
+                            <button type="button" class="day-pill" data-day="0">Sv</button>
                         </div>
                         <div id="add_recurring_preview" class="recurring-preview"
                              style="display:none;"></div>
@@ -513,17 +525,17 @@ $total_remaining = $total_budget_amount - $total_spent;
                 </div>
                 <!-- ── END RECURRING ──────────────────────────────────────── -->
 
-                <div class="form-group">
+                <div class="form-group" id="add_dates_group">
                     <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px;">
                         <div>
                             <label class="form-label">Sākuma datums *</label>
                             <input type="date" name="start_date" id="add_start_date"
-                                   class="form-input" required>
+                                   class="form-input">
                         </div>
                         <div>
                             <label class="form-label">Beigu datums *</label>
                             <input type="date" name="end_date" id="add_end_date"
-                                   class="form-input" required>
+                                   class="form-input">
                         </div>
                     </div>
                 </div>
@@ -576,15 +588,23 @@ $total_remaining = $total_budget_amount - $total_spent;
 
                 <!-- ── RECURRING SCHEDULE ─────────────────────────────────── -->
                 <div class="form-group">
-                    <label class="checkbox-label"
-                           style="cursor:pointer; display:flex; align-items:center; gap:10px;">
-                        <input type="checkbox" id="edit_recurring_toggle" class="checkbox-input">
-                        <span style="font-weight:600; font-size:14px;">
-                            <i class="fa-solid fa-rotate"
-                               style="color:var(--primary); margin-right:4px;"></i>
-                            Recurring weekly schedule
-                        </span>
-                    </label>
+                    <div class="recurring-toggle-row">
+                        <div class="recurring-toggle-label">
+                            <div class="recurring-toggle-icon">
+                                <i class="fa-solid fa-arrows-rotate"></i>
+                            </div>
+                            <div>
+                                <div class="recurring-toggle-title">Recurring weekly schedule</div>
+                                <div class="recurring-toggle-sub">Auto-refreshes every week on selected days</div>
+                            </div>
+                        </div>
+                        <label class="custom-toggle">
+                            <input type="checkbox" id="edit_recurring_toggle">
+                            <span class="custom-toggle-track">
+                                <span class="custom-toggle-thumb"></span>
+                            </span>
+                        </label>
+                    </div>
 
                     <div id="edit_recurring_days_container" style="display:none; margin-top:12px;">
                         <div class="day-picker">
