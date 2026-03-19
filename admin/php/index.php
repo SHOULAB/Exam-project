@@ -73,7 +73,7 @@ $system_info = [
                 <h1 class="admin-title">Dashboard</h1>
                 <div class="admin-user">
                     <span><i class="fa-solid fa-user-tie"></i></span>
-                    <span><?php echo htmlspecialchars($_SESSION['username'] ?? 'Admin'); ?></span>
+                    <span><?php echo htmlspecialchars($_SESSION['admin_username'] ?? 'Admin'); ?></span>
                 </div>
             </div>
 
@@ -120,7 +120,7 @@ $system_info = [
             </div>
         </main>
     </div>
-    
+
     <script src="../js/script.js"></script>
 </body>
 </html>

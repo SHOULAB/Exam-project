@@ -13,37 +13,105 @@ require_once('../../assets/database.php');
 
 $error = '';
 
-// Process form submission
+// ─── Auto-login from remember me cookie ──────────────────────────────────────
+if (!isset($_SESSION['user_id']) && isset($_COOKIE['remember_token'])) {
+    $token = $_COOKIE['remember_token'];
+
+    $stmt = mysqli_prepare($savienojums,
+        "SELECT u.id, u.username, u.email
+         FROM BU_users u
+         JOIN BU_remember_tokens t ON t.user_id = u.id
+         WHERE t.token = ? AND t.expires_at > NOW()");
+
+    if ($stmt) {
+        mysqli_stmt_bind_param($stmt, "s", $token);
+        mysqli_stmt_execute($stmt);
+        $res = mysqli_stmt_get_result($stmt);
+        $user = mysqli_fetch_assoc($res);
+        mysqli_stmt_close($stmt);
+
+        if ($user) {
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['username'] = $user['username'];
+            $_SESSION['email']    = $user['email'];
+
+            // Refresh cookie for another 30 days
+            setcookie('remember_token', $token, time() + (30 * 24 * 60 * 60), '/', '', false, true);
+
+            header('Location: calendar.php');
+            exit();
+        } else {
+            // Token expired or invalid — clear the cookie
+            setcookie('remember_token', '', time() - 3600, '/');
+        }
+    }
+}
+
+// ─── Process login form ───────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $email = trim($_POST['email']);
-    $password = $_POST['password'];
-    
-    // Validation
+    $email       = trim($_POST['email']);
+    $password    = $_POST['password'];
+    $remember_me = isset($_POST['remember']);
+
     if (empty($email) || empty($password)) {
         $error = 'Lūdzu aizpildiet visus laukus!';
     } else {
-        // Check user credentials
-        $stmt = mysqli_prepare($savienojums, "SELECT id, username, email, password FROM BU_users WHERE email = ?");
-        
+        $stmt = mysqli_prepare($savienojums,
+            "SELECT id, username, email, password FROM BU_users WHERE email = ?");
+
         if ($stmt === false) {
             $error = 'Sistēmas kļūda. Lūdzu mēģiniet vēlāk.';
         } else {
             mysqli_stmt_bind_param($stmt, "s", $email);
             mysqli_stmt_execute($stmt);
             mysqli_stmt_store_result($stmt);
-            
+
             if (mysqli_stmt_num_rows($stmt) === 1) {
                 mysqli_stmt_bind_result($stmt, $user_id, $username, $user_email, $hashed_password);
                 mysqli_stmt_fetch($stmt);
-                
-                // Verify password
+
                 if (password_verify($password, $hashed_password)) {
-                    // Login successful
+                    // ── Set session ───────────────────────────────────────────
                     $_SESSION['user_id'] = $user_id;
                     $_SESSION['username'] = $username;
-                    $_SESSION['email'] = $user_email;
-                    
-                    // Redirect to calendar
+                    $_SESSION['email']    = $user_email;
+
+                    // ── Remember me cookie ────────────────────────────────────
+                    if ($remember_me) {
+                        $token   = bin2hex(random_bytes(32));
+                        $expires = date('Y-m-d H:i:s', time() + (30 * 24 * 60 * 60));
+
+                        // Ensure the tokens table exists
+                        mysqli_query($savienojums,
+                            "CREATE TABLE IF NOT EXISTS BU_remember_tokens (
+                                id         INT AUTO_INCREMENT PRIMARY KEY,
+                                user_id    INT NOT NULL,
+                                token      VARCHAR(64) NOT NULL UNIQUE,
+                                expires_at DATETIME NOT NULL,
+                                created_at DATETIME DEFAULT NOW(),
+                                FOREIGN KEY (user_id) REFERENCES BU_users(id) ON DELETE CASCADE
+                            )");
+
+                        // Remove any old tokens for this user (one active token per user)
+                        $del = mysqli_prepare($savienojums,
+                            "DELETE FROM BU_remember_tokens WHERE user_id = ?");
+                        mysqli_stmt_bind_param($del, "i", $user_id);
+                        mysqli_stmt_execute($del);
+                        mysqli_stmt_close($del);
+
+                        // Insert new token
+                        $ins = mysqli_prepare($savienojums,
+                            "INSERT INTO BU_remember_tokens (user_id, token, expires_at)
+                             VALUES (?, ?, ?)");
+                        mysqli_stmt_bind_param($ins, "iss", $user_id, $token, $expires);
+                        mysqli_stmt_execute($ins);
+                        mysqli_stmt_close($ins);
+
+                        // Set cookie for 30 days (httponly for security)
+                        setcookie('remember_token', $token, time() + (30 * 24 * 60 * 60), '/', '', false, true);
+                    }
+
+                    mysqli_stmt_close($stmt);
                     header('Location: calendar.php');
                     exit();
                 } else {
@@ -89,11 +157,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <form class="auth-form" id="loginForm" method="POST" action="">
                 <div class="form-group">
                     <label for="email" class="form-label">E-pasts</label>
-                    <input 
-                        type="email" 
-                        id="email" 
+                    <input
+                        type="email"
+                        id="email"
                         name="email"
-                        class="form-input" 
+                        class="form-input"
                         placeholder="tavs@epasts.lv"
                         required
                         value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>"
@@ -103,11 +171,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="form-group">
                     <label for="password" class="form-label">Parole</label>
                     <div class="password-input-wrapper">
-                        <input 
-                            type="password" 
-                            id="password" 
+                        <input
+                            type="password"
+                            id="password"
                             name="password"
-                            class="form-input" 
+                            class="form-input"
                             placeholder="••••••••"
                             required
                         >
@@ -119,7 +187,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                 <div class="form-options">
                     <label class="checkbox-label">
-                        <input type="checkbox" name="remember" class="checkbox-input">
+                        <input type="checkbox" name="remember" id="remember" class="checkbox-input">
                         <span>Atcerēties mani</span>
                     </label>
                     <a href="#" class="link">Aizmirsi paroli?</a>

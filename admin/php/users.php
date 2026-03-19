@@ -17,13 +17,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $action = $_POST['action'];
 
         if ($action === 'delete') {
-            // Prevent deleting yourself
             if (isset($_SESSION['admin_id']) && $user_id == $_SESSION['admin_id']) {
                 $error = 'Jūs nevarat dzēst savu kontu!';
             } else {
                 $stmt = mysqli_prepare($savienojums, "DELETE FROM BU_users WHERE id = ?");
                 mysqli_stmt_bind_param($stmt, "i", $user_id);
-                
+
                 if (mysqli_stmt_execute($stmt)) {
                     $success = 'Lietotājs veiksmīgi dzēsts!';
                 } else {
@@ -37,7 +36,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 // search bar
 $search = isset($_GET['search']) ? trim($_GET['search']) : '';
-$filter = isset($_GET['filter']) ? $_GET['filter'] : 'all';
 
 $query = "SELECT id, username, email, created_at FROM BU_users WHERE 1=1";
 $params = [];
@@ -117,7 +115,7 @@ $total_users = count($users);
                 <h1 class="admin-title">Lietotāju pārvaldība</h1>
                 <div class="admin-user">
                     <span><i class="fa-solid fa-user-tie"></i></span>
-                    <span><?php echo htmlspecialchars($_SESSION['username'] ?? 'Admin'); ?></span>
+                    <span><?php echo htmlspecialchars($_SESSION['admin_username'] ?? 'Admin'); ?></span>
                 </div>
             </div>
 
@@ -137,10 +135,10 @@ $total_users = count($users);
                 <div class="search-box">
                     <span class="search-icon"><i class="fa-solid fa-magnifying-glass"></i></span>
                     <form method="GET" action="">
-                        <input 
-                            type="text" 
-                            name="search" 
-                            class="search-input" 
+                        <input
+                            type="text"
+                            name="search"
+                            class="search-input"
                             placeholder="Meklēt lietotājus..."
                             value="<?php echo htmlspecialchars($search); ?>"
                         >
