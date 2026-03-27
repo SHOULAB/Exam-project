@@ -2,6 +2,19 @@
 
 https://kristovskis.lv/4pt/janeks/Exam-project/user/php/
 
+---
+
+## 📋 Par projektu
+
+**Budgetar** ir tīmekļa lietotne personīgo finanšu pārvaldībai. Sistēma ļauj lietotājiem sekot līdzi saviem ienākumiem un izdevumiem, veidot budžeta plānus un analizēt finanšu tendences grafiskā veidā.
+
+Projekts izstrādāts kā gala eksāmena darbs **Liepājas Valsts tehnikumā**, 2026. gadā.
+
+**Autors:** Dagnis Janeks  
+**Vadītājs:** Raimonds Kristovskis
+
+---
+
 <div align="center">
 
 ### Sākumlapa
@@ -21,17 +34,6 @@ https://kristovskis.lv/4pt/janeks/Exam-project/user/php/
 ![Budget](https://i.imgur.com/39v5zhE.png)
 
 </div>
-
----
-
-## 📋 Par projektu
-
-**Budgetar** ir tīmekļa lietotne personīgo finanšu pārvaldībai. Sistēma ļauj lietotājiem sekot līdzi saviem ienākumiem un izdevumiem, veidot budžeta plānus un analizēt finanšu tendences grafiskā veidā.
-
-Projekts izstrādāts kā gala eksāmena darbs **Liepājas Valsts tehnikumā**, 2026. gadā.
-
-**Autors:** Dagnis Janeks  
-**Vadītājs:** Raimonds Kristovskis
 
 ---
 
