@@ -269,10 +269,11 @@ $total_remaining = $total_budget_amount - $total_spent;
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../css/dashboard.css">
     <link rel="stylesheet" href="../css/budget.css">
+    <link rel="stylesheet" href="../css/settings.css">
     <link rel="icon" href="../../assets/image/logo.png" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
 </head>
-<body>
+<body class="<?php echo (($_SESSION['theme'] ?? 'dark') === 'light') ? 'light-mode' : ''; ?>">
     <div class="dashboard-container">
 
         <!-- Sidebar -->

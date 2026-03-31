@@ -194,6 +194,7 @@
 }
 
 /* ── Light mode overrides ────────────────────────────────────────────────── */
+/* Covers: style.css, dashboard.css, calendar.css, reports.css, budget.css   */
 
 body.light-mode {
     --bg-dark:        #f0f4f8;
@@ -203,23 +204,7 @@ body.light-mode {
     --border:         #cbd5e1;
 }
 
-body.light-mode .sidebar {
-    background: rgba(255, 255, 255, 0.85);
-    border-right-color: #cbd5e1;
-}
-
-body.light-mode .nav-item:hover,
-body.light-mode .mobile-nav-item:hover {
-    background: rgba(20, 184, 166, 0.08);
-}
-
-body.light-mode .stat-card,
-body.light-mode .calendar-container,
-body.light-mode .settings-card,
-body.light-mode .modal-content {
-    background: rgba(255, 255, 255, 0.9);
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-}
+/* ── style.css: global body & auth ──────────────────────────────────────── */
 
 body.light-mode .form-input {
     background: #f8fafc;
@@ -229,16 +214,110 @@ body.light-mode .form-input {
 
 body.light-mode .form-input:focus {
     border-color: var(--primary);
-    background: #fff;
+    background: #ffffff;
 }
 
-body.light-mode .toggle-slider {
+body.light-mode .btn-secondary {
     background: rgba(0, 0, 0, 0.06);
+    color: var(--text-primary);
+}
+
+body.light-mode .btn-secondary:hover {
+    background: rgba(0, 0, 0, 0.1);
+}
+
+body.light-mode .btn-outline {
+    border-color: #cbd5e1;
+    color: var(--text-primary);
+}
+
+body.light-mode .alert-error {
+    background: rgba(239, 68, 68, 0.08);
+    color: #b91c1c;
+}
+
+body.light-mode .alert-success {
+    background: rgba(16, 185, 129, 0.08);
+    color: #065f46;
+}
+
+body.light-mode .auth-visual {
+    background: linear-gradient(135deg, rgba(20,184,166,0.06) 0%, rgba(45,212,191,0.06) 100%);
+}
+
+body.light-mode .card-demo {
+    background: #ffffff;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+}
+
+body.light-mode .feature-card {
+    background: #ffffff;
+    border-color: #e2e8f0;
+}
+
+body.light-mode .feature-card:hover {
+    box-shadow: 0 10px 30px rgba(20, 184, 166, 0.12);
+}
+
+/* ── dashboard.css: sidebar, layout, stat cards, modals ─────────────────── */
+
+body.light-mode .dashboard-container {
+    background: var(--bg-dark);
+}
+
+body.light-mode .sidebar {
+    background: #ffffff;
+    border-right-color: #cbd5e1;
+}
+
+body.light-mode .sidebar-header,
+body.light-mode .sidebar-footer {
     border-color: #cbd5e1;
 }
 
-body.light-mode .settings-section-icon {
+body.light-mode .nav-item {
+    color: #64748b;
+}
+
+body.light-mode .nav-item:hover {
+    background: rgba(20, 184, 166, 0.07);
+    color: var(--text-primary);
+}
+
+body.light-mode .nav-item.active {
     background: rgba(20, 184, 166, 0.1);
+    color: var(--primary);
+}
+
+body.light-mode .stat-card {
+    background: #ffffff;
+    border-color: #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+body.light-mode .stat-card-today {
+    background: rgba(20, 184, 166, 0.07);
+    border-color: rgba(20, 184, 166, 0.25);
+}
+
+body.light-mode .modal-content {
+    background: #ffffff;
+    border-color: #e2e8f0;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.12);
+}
+
+body.light-mode .modal-header {
+    border-bottom-color: #e2e8f0;
+}
+
+body.light-mode .modal-close:hover {
+    background: rgba(0, 0, 0, 0.06);
+    color: var(--text-primary);
+}
+
+body.light-mode .warning-details {
+    background: #f8fafc;
+    border-color: #e2e8f0;
 }
 
 body.light-mode .mobile-bottom-nav {
@@ -246,13 +325,197 @@ body.light-mode .mobile-bottom-nav {
     border-top-color: #cbd5e1;
 }
 
+body.light-mode .mobile-nav-item {
+    color: #64748b;
+}
+
+body.light-mode .mobile-nav-item.active,
+body.light-mode .mobile-nav-item:hover {
+    background: rgba(20, 184, 166, 0.08);
+    color: var(--primary);
+}
+
+/* ── calendar.css: grid, days, transaction modal ─────────────────────────── */
+
+body.light-mode .calendar-container {
+    background: #ffffff;
+    border-color: #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
 body.light-mode .calendar-day {
-    background: rgba(0, 0, 0, 0.02);
-    border-color: #cbd5e1;
+    background: #f8fafc;
+    border-color: #e2e8f0;
 }
 
 body.light-mode .calendar-day:hover:not(.calendar-day-empty) {
     background: rgba(20, 184, 166, 0.06);
+    border-color: var(--primary);
+}
+
+body.light-mode .calendar-day-today {
+    background: rgba(20, 184, 166, 0.08);
+    border-color: var(--primary);
+}
+
+body.light-mode .calendar-day-number {
+    color: var(--text-primary);
+}
+
+body.light-mode .transaction-item {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+}
+
+body.light-mode .transaction-item:hover {
+    background: #f1f5f9;
+}
+
+body.light-mode .day-transactions-list::-webkit-scrollbar-track { background: #f1f5f9; }
+body.light-mode .day-transactions-list::-webkit-scrollbar-thumb { background: #cbd5e1; }
+
+body.light-mode .delete-btn {
+    background: rgba(239, 68, 68, 0.07);
+    border-color: rgba(239, 68, 68, 0.2);
+}
+
+/* ── reports.css: summary, insights, charts ─────────────────────────────── */
+
+body.light-mode .summary-card {
+    background: #ffffff;
+    border-color: #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+body.light-mode .summary-card:hover {
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+body.light-mode .savings-rate-bar {
+    background: rgba(0, 0, 0, 0.07);
+}
+
+body.light-mode .insight-card {
+    background: #ffffff;
+    border-color: #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+body.light-mode .chart-card {
+    background: #ffffff;
+    border-color: #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+body.light-mode .legend-label {
+    color: #64748b;
+}
+
+/* ── budget.css: budget cards, day pills, warning modal ─────────────────── */
+
+body.light-mode .budget-card {
+    background: #ffffff;
+    border-color: #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+body.light-mode .budget-card:hover {
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+}
+
+body.light-mode .budget-actions {
+    border-top-color: #e2e8f0;
+}
+
+body.light-mode .budget-progress {
+    background: rgba(0, 0, 0, 0.07);
+}
+
+body.light-mode .day-pill {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #64748b;
+}
+
+body.light-mode .day-pill:hover {
+    background: rgba(20, 184, 166, 0.08);
+    border-color: var(--primary);
+    color: var(--text-primary);
+}
+
+body.light-mode .recurring-toggle-row {
+    background: rgba(20, 184, 166, 0.04);
+    border-color: rgba(20, 184, 166, 0.15);
+}
+
+body.light-mode .custom-toggle-track {
+    background: rgba(0, 0, 0, 0.1);
+    border-color: #cbd5e1;
+}
+
+body.light-mode .recurring-preview {
+    background: rgba(20, 184, 166, 0.06);
+    border-color: rgba(20, 184, 166, 0.2);
+}
+
+body.light-mode .bw-modal-content {
+    background: #ffffff;
+}
+
+body.light-mode .bw-modal-header {
+    background: linear-gradient(135deg, rgba(245,158,11,0.06) 0%, rgba(239,68,68,0.04) 100%);
+    border-bottom-color: #e2e8f0;
+}
+
+body.light-mode .bw-budget-row {
+    background: #f8fafc;
+    border-color: #e2e8f0;
+}
+
+body.light-mode .bw-stat {
+    background: #f1f5f9;
+    border-color: #e2e8f0;
+}
+
+body.light-mode .bw-stat-over {
+    background: rgba(239, 68, 68, 0.06);
+    border-color: rgba(239, 68, 68, 0.15);
+}
+
+body.light-mode .bw-progress-track {
+    background: rgba(0, 0, 0, 0.07);
+}
+
+body.light-mode .bw-actions {
+    background: #f8fafc;
+    border-top-color: #e2e8f0;
+}
+
+body.light-mode .bw-actions .btn-secondary {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    color: #64748b;
+}
+
+body.light-mode .bw-actions .btn-secondary:hover {
+    background: #e2e8f0;
+    color: var(--text-primary);
+}
+
+/* ── settings.css: settings cards ───────────────────────────────────────── */
+
+body.light-mode .settings-card {
+    background: #ffffff;
+    border-color: #e2e8f0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+body.light-mode .settings-divider {
+    background: #e2e8f0;
+}
+
+body.light-mode .settings-section-icon {
+    background: rgba(20, 184, 166, 0.1);
 }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
