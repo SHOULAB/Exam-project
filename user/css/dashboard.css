@@ -137,12 +137,6 @@
     display: flex;
     gap: 20px;
     align-items: center;
-    transition: all 0.3s ease;
-}
-
-.stat-card:hover {
-    transform: translateY(-5px) scale(1.02);
-    box-shadow: 0 15px 40px rgba(0, 0, 0, 0.3);
 }
 
 .stat-card-icon {
@@ -153,11 +147,6 @@
     align-items: center;
     justify-content: center;
     border-radius: 12px;
-    transition: transform 0.3s ease;
-}
-
-.stat-card:hover .stat-card-icon {
-    transform: scale(1.1) rotate(5deg);
 }
 
 .stat-card-income .stat-card-icon  { background: rgba(16, 185, 129, 0.1); }
