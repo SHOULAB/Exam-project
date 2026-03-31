@@ -1,67 +1,55 @@
-# Exam-project
+# Exam-project Budgetar
 
 https://kristovskis.lv/4pt/janeks/Exam-project/user/php/
 
-Budgetivia is a personal finance and budgeting project designed to help users track their income and expenses, understand their spending habits, and manage money more effectively through a simple and intuitive interface.
+---
 
-## Calendar Section (Kalendārs)
-- [x] Implement "Add Ienākums" button
-- [x] Add functionality for different transaction types:
-  - [x] Ienākumi (Income) - one-time
-  - [x] Izdevumi (Expenses) - one-time
-  - [x] Ikmēneša ienākumi (Monthly recurring income)
-  - [x] Ikmēneša izdevumi (Monthly recurring expenses)
-- [x] Add budget validation and warnings
-  - [x] Implement warning message when Izdevumi exceeds Ienākumi
-  - [x] Display warning UI component (toast/alert/banner)
+## 📋 Par projektu
 
-## Reports Section (Pārskati)
-- [x] Design reports layout
-- [x] Implement data visualization
-- [x] Generate summary statistics
+**Budgetar** ir tīmekļa lietotne personīgo finanšu pārvaldībai. Sistēma ļauj lietotājiem sekot līdzi saviem ienākumiem un izdevumiem, veidot budžeta plānus un analizēt finanšu tendences grafiskā veidā.
 
-## Budget Section (Budžets)
-- [ ] Create budget overview page
-- [ ] Display income vs expenses comparison
-- [ ] Add budget allocation interface
-- [ ] Implement budget tracking
+Projekts izstrādāts kā gala eksāmena darbs **Liepājas Valsts tehnikumā**, 2026. gadā.
 
-## Settings Section (Iestatījumi)
-- [ ] Language settings (Valodas maiņa)
-  - [ ] Add language selector
-  - [ ] Implement i18n/localization support
-  - [ ] Support multiple languages (LV, EN, etc.)
-- [ ] Currency settings (Valūtas maiņa)
-  - [ ] Add currency selector
-  - [ ] Implement currency conversion
-  - [ ] Store user currency preference
+**Autors:** Dagnis Janeks  
+**Vadītājs:** Raimonds Kristovskis
 
-## Admin Section (Admin daļa)
-- [ ] Dashboard enhancements (Dashboard papildināšana)
-  - [ ] Add key metrics overview
-  - [ ] Implement user statistics
-  - [ ] Add activity monitoring
-- [ ] Admin settings (Iestatījumi)
-  - [ ] User management interface
-  - [ ] System configuration options
-  - [ ] Access control settings
+---
 
-## Technical Tasks
-- [ ] Set up database schema
-- [ ] Create API endpoints
-- [ ] Implement authentication/authorization
-- [ ] Add data validation
-- [ ] Write unit tests
-- [ ] Set up CI/CD pipeline
-- [ ] Add error handling
-- [ ] Implement logging
+<div align="center">
 
-## Future Enhancements
-- [ ] Mobile responsiveness
-- [ ] Export data functionality
-- [ ] Email notifications
-- [ ] Data backup/restore
+### Sākumlapa
+<!-- Ievieto šeit sākumlapas ekrānuzņēmumu -->
+![Main Menu](https://i.imgur.com/Z5Dodx1.png)
 
-## Bugs
-- [ ] Money does not carry over to new months
-- [ ] 
+### Kalendāra skats
+<!-- Ievieto šeit kalendāra ekrānuzņēmumu -->
+![Calendar](https://i.imgur.com/nn9QKOX.png)
+
+### Finanšu pārskati
+<!-- Ievieto šeit pārskatu lapas ekrānuzņēmumu -->
+![Reports](https://i.imgur.com/P5vClc3.png)
+
+### Budžeta pārvaldība
+<!-- Ievieto šeit budžeta lapas ekrānuzņēmumu -->
+![Budget](https://i.imgur.com/39v5zhE.png)
+
+</div>
+
+---
+
+## ✨ Funkcionalitāte
+
+- 🔐 **Lietotāju autentifikācija** — reģistrācija, pieteikšanās, "atcerēties mani"
+- 📅 **Kalendāra skats** — visi ieraksti vizuāli sakārtoti pa dienām
+- ➕ **Transakciju pārvaldība** — ienākumu un izdevumu pievienošana, dzēšana
+- 🔄 **Atkārtoti maksājumi** — automātiski ikmēneša ieraksti
+- 💼 **Budžeta plānošana** — budžetu izveide ar brīdinājuma slieksni
+- 📊 **Detalizēti pārskati** — 5 dažādi grafiki ar 12 mēnešu analīzi
+- 📱 **Responsīvs dizains** — pilnībā pieejams mobilajās ierīcēs
+
+---
+
+## 📄 Licence
+
+Šis projekts izstrādāts izglītības nolūkiem Liepājas Valsts tehnikumā.  
+© 2026 Dagnis Janeks
