@@ -1,0 +1,45 @@
+/* switching-text.css */
+
+.switching-text-wrapper {
+    position: relative;
+    display: inline-block;
+    vertical-align: bottom; /* aligns with surrounding text baseline */
+}
+
+.switching-text {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+}
+
+/* Holds the layout size — must be the longest phrase */
+.word-placeholder {
+    visibility: hidden;
+    display: inline-block;
+    font: inherit;
+    white-space: nowrap;
+    pointer-events: none;
+}
+
+.switching-text .word {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    opacity: 0;
+    transform: translateX(-30px);
+    transition: opacity 0.8s ease-in-out, transform 0.8s ease-in-out;
+    white-space: nowrap;
+}
+
+.switching-text .word.active {
+    opacity: 1;
+    transform: translateX(0);
+}
+
+.switching-text .word.out {
+    opacity: 0;
+    transform: translateX(30px);
+}
