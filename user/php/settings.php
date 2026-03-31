@@ -15,7 +15,7 @@ $error_message   = '';
 // ── Handle preference saves ───────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_settings'])) {
     $theme = $_POST['theme'] === 'light' ? 'light' : 'dark';
-    $allowed_currencies = ['EUR', 'USD', 'GBP', 'JPY', 'CAD', 'AUD', 'CHF', 'CNY', 'INR', 'MXN'];
+    $allowed_currencies = ['EUR', 'USD', 'GBP', 'JPY', 'CHF', 'INR', 'RUB', 'TRY', 'KRW'];
     $currency = isset($_POST['currency']) && in_array($_POST['currency'], $allowed_currencies) 
                 ? $_POST['currency'] 
                 : 'EUR';
@@ -179,18 +179,54 @@ if ($stmt) {
                                 <span class="settings-row-desc">Izvēlieties valūtu budžeta parādīšanai. Šīs izmaiņas ir tikai kosmētiskas un neietekmēs vērtības.</span>
                             </div>
                             <div class="currency-selector">
-                                <select name="currency" id="currencySelect" class="currency-select">
-                                    <option value="EUR" <?php echo $current_currency === 'EUR' ? 'selected' : ''; ?>>€ EUR - Eiro</option>
-                                    <option value="USD" <?php echo $current_currency === 'USD' ? 'selected' : ''; ?>>$ USD - ASV Dolārs</option>
-                                    <option value="GBP" <?php echo $current_currency === 'GBP' ? 'selected' : ''; ?>>£ GBP - Sterliņu mārciņa</option>
-                                    <option value="JPY" <?php echo $current_currency === 'JPY' ? 'selected' : ''; ?>>¥ JPY - Japānas Jena</option>
-                                    <option value="CAD" <?php echo $current_currency === 'CAD' ? 'selected' : ''; ?>>$ CAD - Kanādas Dolārs</option>
-                                    <option value="AUD" <?php echo $current_currency === 'AUD' ? 'selected' : ''; ?>>$ AUD - Austrālijas Dolārs</option>
-                                    <option value="CHF" <?php echo $current_currency === 'CHF' ? 'selected' : ''; ?>>CHF - Šveices Franks</option>
-                                    <option value="CNY" <?php echo $current_currency === 'CNY' ? 'selected' : ''; ?>>¥ CNY - Ķīnas Juaņ</option>
-                                    <option value="INR" <?php echo $current_currency === 'INR' ? 'selected' : ''; ?>>₹ INR - Indijas Rupija</option>
-                                    <option value="MXN" <?php echo $current_currency === 'MXN' ? 'selected' : ''; ?>>$ MXN - Meksikas Peso</option>
+                                <select name="currency" id="currencySelect" class="currency-select" style="display: none;">
+                                    <option value="EUR" <?php echo $current_currency === 'EUR' ? 'selected' : ''; ?>>EUR</option>
+                                    <option value="USD" <?php echo $current_currency === 'USD' ? 'selected' : ''; ?>>USD</option>
+                                    <option value="GBP" <?php echo $current_currency === 'GBP' ? 'selected' : ''; ?>>GBP</option>
+                                    <option value="JPY" <?php echo $current_currency === 'JPY' ? 'selected' : ''; ?>>JPY</option>
+                                    <option value="CHF" <?php echo $current_currency === 'CHF' ? 'selected' : ''; ?>>CHF</option>
+                                    <option value="INR" <?php echo $current_currency === 'INR' ? 'selected' : ''; ?>>INR</option>
+                                    <option value="RUB" <?php echo $current_currency === 'RUB' ? 'selected' : ''; ?>>RUB</option>
+                                    <option value="TRY" <?php echo $current_currency === 'TRY' ? 'selected' : ''; ?>>TRY</option>
+                                    <option value="KRW" <?php echo $current_currency === 'KRW' ? 'selected' : ''; ?>>KRW</option>
                                 </select>
+                                <div class="custom-select" id="customCurrencySelect">
+                                    <div class="custom-select-trigger">
+                                        <span class="custom-select-value" id="customSelectValue">
+                                            <i class="fa-solid fa-euro-sign"></i> EUR - Eiro
+                                        </span>
+                                        <i class="fa-solid fa-chevron-down custom-select-arrow"></i>
+                                    </div>
+                                    <ul class="custom-options" id="customOptions">
+                                        <li class="custom-option" data-value="EUR">
+                                            <i class="fa-solid fa-euro-sign"></i> EUR - Eiro
+                                        </li>
+                                        <li class="custom-option" data-value="USD">
+                                            <i class="fa-solid fa-dollar-sign"></i> USD - Dolārs
+                                        </li>
+                                        <li class="custom-option" data-value="GBP">
+                                            <i class="fa-solid fa-sterling-sign"></i> GBP - Sterliņu mārciņa
+                                        </li>
+                                        <li class="custom-option" data-value="JPY">
+                                            <i class="fa-solid fa-yen-sign"></i> JPY - Japānas Jena
+                                        </li>
+                                        <li class="custom-option" data-value="CHF">
+                                            <i class="fa-solid fa-franc-sign"></i> CHF - Šveices Franks
+                                        </li>
+                                        <li class="custom-option" data-value="INR">
+                                            <i class="fa-solid fa-indian-rupee-sign"></i> INR - Indijas Rupija
+                                        </li>
+                                        <li class="custom-option" data-value="RUB">
+                                            <i class="fa-solid fa-ruble-sign"></i> RUB - Krievijas Rublis
+                                        </li>
+                                        <li class="custom-option" data-value="TRY">
+                                            <i class="fa-solid fa-turkish-lira-sign"></i> TRY - Turcijas Lira
+                                        </li>
+                                        <li class="custom-option" data-value="KRW">
+                                            <i class="fa-solid fa-won-sign"></i> KRW - Korejas Vona
+                                        </li>
+                                    </ul>
+                                </div>
                                 <div class="currency-preview">
                                     <span class="currency-symbol" id="currencySymbol"></span>
                                 </div>

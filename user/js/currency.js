@@ -1,29 +1,39 @@
 // currency.js — Global currency utility for all pages
 
 const currencySymbols = {
+    'EUR': '<i class="fa-solid fa-euro-sign"></i>',
+    'USD': '<i class="fa-solid fa-dollar-sign"></i>',
+    'GBP': '<i class="fa-solid fa-sterling-sign"></i>',
+    'JPY': '<i class="fa-solid fa-yen-sign"></i>',
+    'CHF': '<i class="fa-solid fa-franc-sign"></i>',
+    'INR': '<i class="fa-solid fa-indian-rupee-sign"></i>',
+    'RUB': '<i class="fa-solid fa-ruble-sign"></i>',
+    'TRY': '<i class="fa-solid fa-turkish-lira-sign"></i>',
+    'KRW': '<i class="fa-solid fa-won-sign"></i>'
+};
+
+const currencyTextSymbols = {
     'EUR': '€',
     'USD': '$',
     'GBP': '£',
     'JPY': '¥',
-    'CAD': '$',
-    'AUD': '$',
     'CHF': 'CHF',
-    'CNY': '¥',
     'INR': '₹',
-    'MXN': '$'
+    'RUB': '₽',
+    'TRY': '₺',
+    'KRW': '₩'
 };
 
 const currencyNames = {
     'EUR': 'Eiro',
-    'USD': 'ASV Dolārs',
+    'USD': 'Dolārs',
     'GBP': 'Sterliņu mārciņa',
     'JPY': 'Japānas Jena',
-    'CAD': 'Kanādas Dolārs',
-    'AUD': 'Austrālijas Dolārs',
     'CHF': 'Šveices Franks',
-    'CNY': 'Ķīnas Juaņ',
     'INR': 'Indijas Rupija',
-    'MXN': 'Meksikas Peso'
+    'RUB': 'Krievijas Rublis',
+    'TRY': 'Turcijas Lira',
+    'KRW': 'Korejas Vona'
 };
 
 // Track currency change listeners
@@ -54,6 +64,10 @@ function getCurrencySymbol(code) {
     return currencySymbols[code] || code;
 }
 
+function getCurrencyTextSymbol(code) {
+    return currencyTextSymbols[code] || code;
+}
+
 /**
  * Format an amount with the current currency
  * @param {number} amount - The amount to format
@@ -62,7 +76,7 @@ function getCurrencySymbol(code) {
  */
 function formatCurrency(amount, code = null) {
     const currency = code || getCurrentCurrency();
-    const symbol = getCurrencySymbol(currency);
+    const symbol = getCurrencyTextSymbol(currency);
     const formatted = parseFloat(amount).toFixed(2);
     return `${symbol}${formatted}`;
 }
@@ -75,7 +89,7 @@ function formatCurrency(amount, code = null) {
  */
 function formatCurrencyAlt(amount, prefix = true) {
     const currency = getCurrentCurrency();
-    const symbol = getCurrencySymbol(currency);
+    const symbol = getCurrencyTextSymbol(currency);
     const formatted = parseFloat(amount).toFixed(2);
     return prefix ? `${symbol}${formatted}` : `${formatted} ${symbol}`;
 }

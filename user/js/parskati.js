@@ -10,9 +10,9 @@ const textColor  = '#94a3b8';
 const fontFamily = "'Segoe UI', sans-serif";
 const isMobile   = window.innerWidth <= 480;
 
-// Helper to get current currency symbol dynamically
+// Helper to get current currency symbol dynamically for charts
 function getCurrSymbolDynamic() {
-    return getCurrencySymbol(getCurrentCurrency());
+    return getCurrencyTextSymbol(getCurrentCurrency());
 }
 
 Chart.defaults.color = textColor;

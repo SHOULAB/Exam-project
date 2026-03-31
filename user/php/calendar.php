@@ -24,18 +24,17 @@ if ($stmt) {
 }
 
 $currencySymbols = [
-    'EUR' => '€',
-    'USD' => '$',
-    'GBP' => '£',
-    'JPY' => '¥',
-    'CAD' => '$',
-    'AUD' => '$',
-    'CHF' => 'CHF',
-    'CNY' => '¥',
-    'INR' => '₹',
-    'MXN' => '$'
+    'EUR' => '<i class="fa-solid fa-euro-sign"></i>',
+    'USD' => '<i class="fa-solid fa-dollar-sign"></i>',
+    'GBP' => '<i class="fa-solid fa-sterling-sign"></i>',
+    'JPY' => '<i class="fa-solid fa-yen-sign"></i>',
+    'CHF' => '<i class="fa-solid fa-franc-sign"></i>',
+    'INR' => '<i class="fa-solid fa-indian-rupee-sign"></i>',
+    'RUB' => '<i class="fa-solid fa-ruble-sign"></i>',
+    'TRY' => '<i class="fa-solid fa-turkish-lira-sign"></i>',
+    'KRW' => '<i class="fa-solid fa-won-sign"></i>'
 ];
-$currSymbol = $currencySymbols[$_SESSION['currency']] ?? '€';
+$currSymbol = $currencySymbols[$_SESSION['currency']] ?? '<i class="fa-solid fa-euro-sign"></i>';
 
 //Income submit
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_income'])) {
