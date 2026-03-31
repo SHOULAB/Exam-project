@@ -241,3 +241,14 @@
 
     .calendar-day:not(.calendar-day-has-data) .calendar-day-number { opacity: 0.5; }
 }
+
+/* Remove stat card load/animation effects on calendar page */
+.stat-card,
+.stat-card-icon,
+.stat-card-content,
+.stat-card-label,
+.stat-card-value,
+.stat-card-sublabel {
+    transition: none !important;
+    animation: none !important;
+}
