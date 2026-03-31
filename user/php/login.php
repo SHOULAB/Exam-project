@@ -35,6 +35,20 @@ if (!isset($_SESSION['user_id']) && isset($_COOKIE['remember_token'])) {
             $_SESSION['username'] = $user['username'];
             $_SESSION['email']    = $user['email'];
 
+            // Fetch user theme setting
+            $theme_stmt = mysqli_prepare($savienojums, "SELECT setting_value FROM BU_user_settings WHERE user_id = ? AND setting_key = 'theme'");
+            if ($theme_stmt) {
+                mysqli_stmt_bind_param($theme_stmt, "i", $user['id']);
+                mysqli_stmt_execute($theme_stmt);
+                $theme_res = mysqli_stmt_get_result($theme_stmt);
+                if ($theme_row = mysqli_fetch_assoc($theme_res)) {
+                    $_SESSION['theme'] = $theme_row['setting_value'];
+                } else {
+                    $_SESSION['theme'] = 'dark';
+                }
+                mysqli_stmt_close($theme_stmt);
+            }
+
             // Refresh cookie for another 30 days
             setcookie('remember_token', $token, time() + (30 * 24 * 60 * 60), '/', '', false, true);
 
@@ -75,6 +89,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['user_id'] = $user_id;
                     $_SESSION['username'] = $username;
                     $_SESSION['email']    = $user_email;
+
+                    // Fetch user theme setting
+                    $theme_stmt = mysqli_prepare($savienojums, "SELECT setting_value FROM BU_user_settings WHERE user_id = ? AND setting_key = 'theme'");
+                    if ($theme_stmt) {
+                        mysqli_stmt_bind_param($theme_stmt, "i", $user_id);
+                        mysqli_stmt_execute($theme_stmt);
+                        $theme_res = mysqli_stmt_get_result($theme_stmt);
+                        if ($theme_row = mysqli_fetch_assoc($theme_res)) {
+                            $_SESSION['theme'] = $theme_row['setting_value'];
+                        } else {
+                            $_SESSION['theme'] = 'dark';
+                        }
+                        mysqli_stmt_close($theme_stmt);
+                    }
 
                     // ── Remember me cookie ────────────────────────────────────
                     if ($remember_me) {
