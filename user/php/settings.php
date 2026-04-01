@@ -8,6 +8,7 @@ require_once('../../assets/database.php');
 
 $user_id  = $_SESSION['user_id'];
 $username = $_SESSION['username'];
+$current_email = '';
 
 $success_message = '';
 $error_message   = '';
@@ -61,6 +62,62 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_settings'])) {
                 } else {
                     $success = false;
                     $error_message = 'Kļūda atjauninot lietotājvārdu. Lūdzu mēģiniet vēlāk.';
+                }
+            }
+        }
+    }
+
+    // Save email
+    if (isset($_POST['email'])) {
+        $new_email = trim($_POST['email']);
+
+        if ($new_email === '') {
+            $success = false;
+            $error_message = 'E-pasts nevar būt tukšs.';
+        } elseif (!filter_var($new_email, FILTER_VALIDATE_EMAIL)) {
+            $success = false;
+            $error_message = 'Lūdzu ievadiet derīgu e-pasta adresi.';
+        } else {
+            // Load current email if not already loaded
+            if ($current_email === '') {
+                $stmt_email = mysqli_prepare($savienojums, "SELECT email FROM BU_users WHERE id = ?");
+                if ($stmt_email) {
+                    mysqli_stmt_bind_param($stmt_email, "i", $user_id);
+                    mysqli_stmt_execute($stmt_email);
+                    mysqli_stmt_bind_result($stmt_email, $current_email);
+                    mysqli_stmt_fetch($stmt_email);
+                    mysqli_stmt_close($stmt_email);
+                }
+            }
+
+            if ($success && $new_email !== $current_email) {
+                $stmt = mysqli_prepare($savienojums, "SELECT id FROM BU_users WHERE email = ? AND id != ?");
+                if ($stmt) {
+                    mysqli_stmt_bind_param($stmt, "si", $new_email, $user_id);
+                    mysqli_stmt_execute($stmt);
+                    mysqli_stmt_store_result($stmt);
+                    if (mysqli_stmt_num_rows($stmt) > 0) {
+                        $success = false;
+                        $error_message = 'Šī e-pasta adrese jau ir aizņemta.';
+                    }
+                    mysqli_stmt_close($stmt);
+                }
+
+                if ($success) {
+                    $stmt = mysqli_prepare($savienojums, "UPDATE BU_users SET email = ? WHERE id = ?");
+                    if ($stmt) {
+                        mysqli_stmt_bind_param($stmt, "si", $new_email, $user_id);
+                        if (mysqli_stmt_execute($stmt)) {
+                            $current_email = $new_email;
+                        } else {
+                            $success = false;
+                            $error_message = 'Kļūda atjauninot e-pastu. Lūdzu mēģiniet vēlāk.';
+                        }
+                        mysqli_stmt_close($stmt);
+                    } else {
+                        $success = false;
+                        $error_message = 'Kļūda atjauninot e-pastu. Lūdzu mēģiniet vēlāk.';
+                    }
                 }
             }
         }
@@ -121,6 +178,16 @@ if ($stmt) {
             $_SESSION['currency'] = $current_currency;
         }
     }
+    mysqli_stmt_close($stmt);
+}
+
+// Load current email from database
+$stmt = mysqli_prepare($savienojums, "SELECT email FROM BU_users WHERE id = ?");
+if ($stmt) {
+    mysqli_stmt_bind_param($stmt, "i", $user_id);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_bind_result($stmt, $current_email);
+    mysqli_stmt_fetch($stmt);
     mysqli_stmt_close($stmt);
 }
 ?>
@@ -297,6 +364,16 @@ if ($stmt) {
                                 </div>
                                 <div class="settings-row-field">
                                     <input type="text" name="username" id="accountUsername" class="form-input" value="<?php echo htmlspecialchars($username); ?>" required minlength="4" placeholder="Lietotājvārds">
+                                </div>
+                            </div>
+                            <div class="settings-divider"></div>
+                            <div class="settings-row">
+                                <div class="settings-row-info">
+                                    <span class="settings-row-label">E-pasts</span>
+                                    <span class="settings-row-desc">Jūsu konta e-pasta adrese. Tā tiek izmantota pieteikšanās un saziņai.</span>
+                                </div>
+                                <div class="settings-row-field">
+                                    <input type="email" name="email" id="accountEmail" class="form-input" value="<?php echo htmlspecialchars($current_email); ?>" required placeholder="E-pasts">
                                 </div>
                             </div>
                         </div>
