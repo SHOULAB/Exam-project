@@ -11,6 +11,7 @@
     align-items: center;
     gap: 16px;
     margin-bottom: 20px;
+    margin-top: 20px;
 }
 
 .settings-section-icon {
@@ -80,6 +81,16 @@
 .settings-row-desc {
     font-size: 13px;
     color: var(--text-secondary);
+}
+
+.settings-row-field {
+    flex: 1;
+    min-width: 240px;
+    max-width: 420px;
+}
+
+.settings-row-field .form-input {
+    width: 100%;
 }
 
 /* ── Theme preview cards ─────────────────────────────────────────────────── */

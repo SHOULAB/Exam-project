@@ -22,6 +22,50 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_settings'])) {
 
     $success = true;
 
+    // Save username
+    if (isset($_POST['username'])) {
+        $new_username = trim($_POST['username']);
+
+        if ($new_username === '') {
+            $success = false;
+            $error_message = 'Lietotājvārds nevar būt tukšs.';
+        } elseif (strlen($new_username) < 4) {
+            $success = false;
+            $error_message = 'Lietotājvārdam jābūt vismaz 4 simbolus garam.';
+        } elseif ($new_username !== $username) {
+            $stmt = mysqli_prepare($savienojums, "SELECT id FROM BU_users WHERE username = ? AND id != ?");
+            if ($stmt) {
+                mysqli_stmt_bind_param($stmt, "si", $new_username, $user_id);
+                mysqli_stmt_execute($stmt);
+                mysqli_stmt_store_result($stmt);
+
+                if (mysqli_stmt_num_rows($stmt) > 0) {
+                    $success = false;
+                    $error_message = 'Šāds lietotājvārds jau ir aizņemts.';
+                }
+                mysqli_stmt_close($stmt);
+            }
+
+            if ($success) {
+                $stmt = mysqli_prepare($savienojums, "UPDATE BU_users SET username = ? WHERE id = ?");
+                if ($stmt) {
+                    mysqli_stmt_bind_param($stmt, "si", $new_username, $user_id);
+                    if (mysqli_stmt_execute($stmt)) {
+                        $_SESSION['username'] = $new_username;
+                        $username = $new_username;
+                    } else {
+                        $success = false;
+                        $error_message = 'Kļūda atjauninot lietotājvārdu. Lūdzu mēģiniet vēlāk.';
+                    }
+                    mysqli_stmt_close($stmt);
+                } else {
+                    $success = false;
+                    $error_message = 'Kļūda atjauninot lietotājvārdu. Lūdzu mēģiniet vēlāk.';
+                }
+            }
+        }
+    }
+
     // Save theme
     $stmt = mysqli_prepare($savienojums,
         "INSERT INTO BU_user_settings (user_id, setting_key, setting_value)
@@ -52,7 +96,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_settings'])) {
 
     if ($success) {
         $success_message = 'Iestatījumi saglabāti veiksmīgi!';
-    } else {
+    } elseif ($error_message === '') {
         $error_message = 'Kļūda saglabājot iestatījumus.';
     }
 }
@@ -233,6 +277,30 @@ if ($stmt) {
                             </div>
                         </div>
                     </div>
+
+                    <section class="settings-section">
+                        <div class="settings-section-header">
+                            <div class="settings-section-icon">
+                                <i class="fa-solid fa-user"></i>
+                            </div>
+                            <div>
+                                <h2 class="settings-section-title">Konts</h2>
+                                <p class="settings-section-subtitle">Mainiet konta lietotājvārdu, kas tiek parādīts visā lietotnē.</p>
+                            </div>
+                        </div>
+
+                        <div class="settings-card">
+                            <div class="settings-row">
+                                <div class="settings-row-info">
+                                    <span class="settings-row-label">Lietotājvārds</span>
+                                    <span class="settings-row-desc">Lietotājvārds jābūt unikālam un vismaz 4 simbolus garam.</span>
+                                </div>
+                                <div class="settings-row-field">
+                                    <input type="text" name="username" id="accountUsername" class="form-input" value="<?php echo htmlspecialchars($username); ?>" required minlength="4" placeholder="Lietotājvārds">
+                                </div>
+                            </div>
+                        </div>
+                    </section>
 
                     <div class="settings-actions">
                         <button type="submit" class="btn btn-primary">
