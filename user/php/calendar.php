@@ -6,6 +6,11 @@ if (!isset($_SESSION['user_id'])) {
 }
 require_once('../../assets/database.php');
 
+function is_ajax_request() {
+    return !empty($_SERVER['HTTP_X_REQUESTED_WITH'])
+        && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
+}
+
 $user_id = $_SESSION['user_id'];
 $username = $_SESSION['username'];
 
@@ -51,6 +56,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_income'])) {
             mysqli_stmt_execute($stmt);
             mysqli_stmt_close($stmt);
             
+            if (is_ajax_request()) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => true]);
+                exit();
+            }
+
             header('Location: calendar.php');
             exit();
         }
@@ -72,6 +83,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_expense'])) {
             mysqli_stmt_execute($stmt);
             mysqli_stmt_close($stmt);
             
+            if (is_ajax_request()) {
+                header('Content-Type: application/json');
+                echo json_encode(['success' => true]);
+                exit();
+            }
+
             header('Location: calendar.php');
             exit();
         }
@@ -246,6 +263,35 @@ if ($next_month > 12) {
     $next_month = 1;
     $next_year++;
 }
+
+if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
+    $month_names = ['', 'Janvāris', 'Februāris', 'Marts', 'Aprīlis', 'Maijs',
+                    'Jūnijs', 'Jūlijs', 'Augusts', 'Septembris', 'Oktobris',
+                    'Novembris', 'Decembris'];
+
+    header('Content-Type: application/json');
+    echo json_encode([
+        'success' => true,
+        'current_month' => $current_month,
+        'current_year'  => $current_year,
+        'month_name'    => $month_names[$current_month],
+        'prev_month'    => $prev_month,
+        'prev_year'     => $prev_year,
+        'next_month'    => $next_month,
+        'next_year'     => $next_year,
+        'days_in_month' => $days_in_month,
+        'first_weekday' => $day_of_week,
+        'transactions'  => $transactions,
+        'total_income'  => $total_income,
+        'total_expense' => $total_expense,
+        'balance'       => $balance,
+        'today_balance' => $today_balance,
+        'is_current_month' => $is_current_month,
+        'currency_symbol' => $currSymbol,
+        'activeBudgets' => $activeBudgets,
+    ]);
+    exit();
+}
 ?>
 <?php $active_page = 'calendar'; ?>
 <!DOCTYPE html>
@@ -282,15 +328,13 @@ if ($next_month > 12) {
             </div>
 
             <div class="stats-grid">
-                <?php if ($is_current_month): ?>
-                <div class="stat-card stat-card-today">
+                <div class="stat-card stat-card-today" style="<?php echo $is_current_month ? '' : 'display:none;'; ?>">
                     <div class="stat-card-icon"><i class="fa-solid fa-wallet"></i></div>
                     <div class="stat-card-content">
                         <div class="stat-card-label">Bilance</div>
                         <div class="stat-card-value"><?php echo $currSymbol; ?><?php echo number_format($today_balance, 2); ?></div>
                     </div>
                 </div>
-                <?php endif; ?>
                 
                 <div class="stat-card stat-card-income">
                     <div class="stat-card-icon"><i class="fa-solid fa-sack-dollar"></i></div>
@@ -317,7 +361,7 @@ if ($next_month > 12) {
 
             <div class="calendar-container">
                 <div class="calendar-header">
-                    <a href="?month=<?php echo $prev_month; ?>&year=<?php echo $prev_year; ?>" class="calendar-nav">
+                    <a href="?month=<?php echo $prev_month; ?>&year=<?php echo $prev_year; ?>" class="calendar-nav" data-month="<?php echo $prev_month; ?>" data-year="<?php echo $prev_year; ?>" data-direction="prev">
                         ← Iepriekšējais
                     </a>
                     <h2 class="calendar-month">
@@ -327,7 +371,7 @@ if ($next_month > 12) {
                         echo $month_names[$current_month] . ' ' . $current_year;
                         ?>
                     </h2>
-                    <a href="?month=<?php echo $next_month; ?>&year=<?php echo $next_year; ?>" class="calendar-nav">
+                    <a href="?month=<?php echo $next_month; ?>&year=<?php echo $next_year; ?>" class="calendar-nav" data-month="<?php echo $next_month; ?>" data-year="<?php echo $next_year; ?>" data-direction="next">
                         Nākamais →
                     </a>
                 </div>
@@ -488,11 +532,14 @@ if ($next_month > 12) {
     <?php include __DIR__ . '/mobile_nav.php'; ?>
 
     <script>
-        const transactionsData = <?php echo json_encode($transactions); ?>;
-        const monthlyIncome    = <?php echo $total_income; ?>;
-        const monthlyExpense   = <?php echo $total_expense; ?>;
+        let transactionsData = <?php echo json_encode($transactions); ?>;
+        let monthlyIncome    = <?php echo $total_income; ?>;
+        let monthlyExpense   = <?php echo $total_expense; ?>;
+        let currentMonth     = <?php echo $current_month; ?>;
+        let currentYear      = <?php echo $current_year; ?>;
+        let currencySymbol   = <?php echo json_encode($currSymbol); ?>;
         // Active budgets with their spent/remaining amounts — used for budget-exceed warning
-        const activeBudgets    = <?php echo json_encode($activeBudgets); ?>;
+        let activeBudgets    = <?php echo json_encode($activeBudgets); ?>;
     </script>
     <script src="../js/currency.js"></script>
     <script>

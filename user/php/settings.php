@@ -134,7 +134,7 @@ if ($stmt) {
                         <!-- Theme ──────────────────────────────────────────────────── -->
                         <div class="settings-row">
                             <div class="settings-row-info">
-                                <span class="settings-row-label">Krāzu shēma</span>
+                                <span class="settings-row-label">Krāsu shēma</span>
                                 <span class="settings-row-desc">Izvēlieties tumšo vai gaišo režīmu</span>
                             </div>
                             <div class="theme-toggle-group">

@@ -1,3 +1,7 @@
+// Month names used across calendar rendering and day modal titles
+const monthNames = ['', 'Janvāris', 'Februāris', 'Marts', 'Aprīlis', 'Maijs', 'Jūnijs',
+                    'Jūlijs', 'Augusts', 'Septembris', 'Oktobris', 'Novembris', 'Decembris'];
+
 // open income modal
 function openIncomeModal() {
     const modal = document.getElementById('incomeModal');
@@ -45,7 +49,7 @@ function openDayModal(day, month, year) {
         const typeLabel = transaction.type === 'income' ? 'Ienākums' : 'Izdevums';
         const sign      = transaction.type === 'income' ? '+' : '-';
         const recurringBadge = transaction.is_recurring_display
-            ? '<span class="recurring-badge">🔄 Ikmēneša</span>' : '';
+            ? '<span class="recurring-badge"><i class="fa-solid fa-rotate"></i> Ikmēneša</span>' : '';
         
         // Only show delete for real DB entries (recurring_display ones are projected copies)
         const deleteBtn = !transaction.is_recurring_display
@@ -89,6 +93,212 @@ function closeDayModal() {
     modal.classList.remove('modal-open');
     document.body.style.overflow = 'auto';
 }
+
+function formatNumber(value) {
+    return Number(value).toLocaleString('lv-LV', {
+        minimumFractionDigits: 2,
+        maximumFractionDigits: 2
+    });
+}
+
+function updateCalendarHeader(data) {
+    const monthTitle = document.querySelector('.calendar-month');
+    if (monthTitle) {
+        monthTitle.textContent = `${data.month_name} ${data.current_year}`;
+    }
+
+    document.querySelectorAll('.calendar-nav').forEach(link => {
+        if (link.dataset.direction === 'prev') {
+            link.href = `?month=${data.prev_month}&year=${data.prev_year}`;
+            link.dataset.month = data.prev_month;
+            link.dataset.year = data.prev_year;
+        } else if (link.dataset.direction === 'next') {
+            link.href = `?month=${data.next_month}&year=${data.next_year}`;
+            link.dataset.month = data.next_month;
+            link.dataset.year = data.next_year;
+        }
+    });
+}
+
+function renderSummary(data) {
+    const incomeValue = document.querySelector('.stat-card-income .stat-card-value');
+    const expenseValue = document.querySelector('.stat-card-expense .stat-card-value');
+    const balanceValue = document.querySelector('.stat-card-balance .stat-card-value');
+    const todayCard = document.querySelector('.stat-card-today');
+
+    if (incomeValue) incomeValue.innerHTML = currencySymbol + formatNumber(data.total_income);
+    if (expenseValue) expenseValue.innerHTML = currencySymbol + formatNumber(data.total_expense);
+    if (balanceValue) balanceValue.innerHTML = currencySymbol + formatNumber(data.balance);
+
+    if (todayCard) {
+        const todayValue = todayCard.querySelector('.stat-card-value');
+        todayCard.style.display = data.is_current_month ? '' : 'none';
+        if (todayValue) {
+            todayValue.innerHTML = currencySymbol + formatNumber(data.today_balance);
+        }
+    }
+}
+
+function renderCalendarGrid(data) {
+    const calendarGrid = document.querySelector('.calendar-grid');
+    if (!calendarGrid) return;
+
+    while (calendarGrid.children.length > 7) {
+        calendarGrid.removeChild(calendarGrid.lastChild);
+    }
+
+    const daysInMonth = parseInt(data.days_in_month, 10);
+    const firstWeekday = parseInt(data.first_weekday, 10) || 1;
+    const today = new Date();
+    const todayDay = today.getDate();
+    const todayMonth = today.getMonth() + 1;
+    const todayYear = today.getFullYear();
+
+    for (let i = 1; i < firstWeekday; i++) {
+        const emptyDay = document.createElement('div');
+        emptyDay.className = 'calendar-day calendar-day-empty';
+        calendarGrid.appendChild(emptyDay);
+    }
+
+    for (let day = 1; day <= daysInMonth; day++) {
+        const dayTransactions = Array.isArray(data.transactions?.[day]) ? data.transactions[day] : (data.transactions?.[String(day)] || []);
+        const hasTransactions = dayTransactions.length > 0;
+
+        const dayDiv = document.createElement('div');
+        let classes = 'calendar-day';
+
+        if (day === todayDay && data.current_month === todayMonth && data.current_year === todayYear) {
+            classes += ' calendar-day-today';
+        }
+        if (hasTransactions) {
+            classes += ' calendar-day-has-data';
+        }
+
+        dayDiv.className = classes;
+        dayDiv.dataset.day = day;
+        dayDiv.addEventListener('click', function() {
+            openDayModal(day, data.current_month, data.current_year);
+        });
+
+        dayDiv.innerHTML = `<div class="calendar-day-number">${day}</div>`;
+
+        if (hasTransactions) {
+            let transactionsHtml = '<div class="calendar-day-transactions">';
+            const dayIncome = dayTransactions.reduce((sum, transaction) => {
+                return sum + (transaction.type === 'income' ? parseFloat(transaction.amount) : 0);
+            }, 0);
+            const dayExpense = dayTransactions.reduce((sum, transaction) => {
+                return sum + (transaction.type === 'expense' ? parseFloat(transaction.amount) : 0);
+            }, 0);
+
+            if (dayIncome > 0) {
+                transactionsHtml += `<div class="calendar-transaction-badge income">+${currencySymbol}${formatNumber(dayIncome)}</div>`;
+            }
+            if (dayExpense > 0) {
+                transactionsHtml += `<div class="calendar-transaction-badge expense">-${currencySymbol}${formatNumber(dayExpense)}</div>`;
+            }
+            transactionsHtml += '</div>';
+            dayDiv.innerHTML += transactionsHtml;
+        }
+
+        calendarGrid.appendChild(dayDiv);
+    }
+}
+
+function refreshCalendar(data, pushState = false) {
+    transactionsData = data.transactions || {};
+    monthlyIncome = parseFloat(data.total_income) || 0;
+    monthlyExpense = parseFloat(data.total_expense) || 0;
+    currentMonth = parseInt(data.current_month, 10) || currentMonth;
+    currentYear = parseInt(data.current_year, 10) || currentYear;
+    currencySymbol = data.currency_symbol || currencySymbol;
+    activeBudgets = data.activeBudgets || [];
+
+    renderSummary(data);
+    renderCalendarGrid(data);
+    updateCalendarHeader(data);
+    attachCalendarNavHandlers();
+
+    if (pushState && window.history && window.history.pushState) {
+        window.history.pushState({ month: currentMonth, year: currentYear }, '', `?month=${currentMonth}&year=${currentYear}`);
+        document.title = `Kalendārs - ${data.month_name} ${currentYear} - Budgetiva`;
+    }
+}
+
+function loadCalendarMonth(month, year, pushState = true) {
+    fetch(`calendar.php?month=${month}&year=${year}&ajax=1`, {
+        credentials: 'same-origin'
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Network response was not ok');
+        return response.json();
+    })
+    .then(data => {
+        if (!data.success) throw new Error('Server did not return JSON success');
+        refreshCalendar(data, pushState);
+    })
+    .catch(() => {
+        window.location.href = `calendar.php?month=${month}&year=${year}`;
+    });
+}
+
+function handleCalendarNavClick(event) {
+    event.preventDefault();
+    const month = parseInt(this.dataset.month, 10);
+    const year = parseInt(this.dataset.year, 10);
+    if (Number.isFinite(month) && Number.isFinite(year)) {
+        loadCalendarMonth(month, year);
+    }
+}
+
+function attachCalendarNavHandlers() {
+    document.querySelectorAll('.calendar-nav').forEach(link => {
+        link.removeEventListener('click', handleCalendarNavClick);
+        link.addEventListener('click', handleCalendarNavClick);
+    });
+}
+
+function handleTransactionFormSubmit(e) {
+    if (e.defaultPrevented) return;
+    const form = e.target;
+    if (!(form instanceof HTMLFormElement)) return;
+    if (form.dataset.skipAjax === '1') return;
+    if (!form.querySelector('input[name="add_income"], input[name="add_expense"]')) return;
+
+    e.preventDefault();
+    const formData = new FormData(form);
+    formData.append('ajax', 1);
+
+    fetch('calendar.php', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'same-origin',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Failed to submit transaction');
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            closeIncomeModal();
+            closeExpenseModal();
+            loadCalendarMonth(currentMonth, currentYear, false);
+        } else {
+            form.dataset.skipAjax = '1';
+            form.submit();
+        }
+    })
+    .catch(() => {
+        form.dataset.skipAjax = '1';
+        form.submit();
+    });
+}
+
+window.addEventListener('DOMContentLoaded', function() {
+    attachCalendarNavHandlers();
+    document.addEventListener('submit', handleTransactionFormSubmit);
+});
 
 // close modal if click outside
 window.addEventListener('click', function(e) {
