@@ -32,8 +32,6 @@ function closeExpenseModal() {
 
 // open day details
 function openDayModal(day, month, year) {
-    if (!transactionsData[day]) return;
-    
     const modal   = document.getElementById('dayModal');
     const title   = document.getElementById('dayModalTitle');
     const content = document.getElementById('dayModalContent');
@@ -41,50 +39,49 @@ function openDayModal(day, month, year) {
                         'Jūlijs', 'Augusts', 'Septembris', 'Oktobris', 'Novembris', 'Decembris'];
     title.textContent = `${day}. ${monthNames[month]}, ${year}`;
     
-    const transactions = transactionsData[day];
+    const transactions = Array.isArray(transactionsData[day]) ? transactionsData[day] : (Array.isArray(transactionsData[String(day)]) ? transactionsData[String(day)] : []);
     let html = '';
     
-    transactions.forEach(transaction => {
-        const typeClass = transaction.type === 'income' ? 'income' : 'expense';
-        const typeLabel = transaction.type === 'income' ? 'Ienākums' : 'Izdevums';
-        const sign      = transaction.type === 'income' ? '+' : '-';
-        const recurringBadge = transaction.is_recurring_display
-            ? '<span class="recurring-badge"><i class="fa-solid fa-rotate"></i> Ikmēneša</span>' : '';
-        
-        // Only show delete for real DB entries (recurring_display ones are projected copies)
-        const deleteBtn = !transaction.is_recurring_display
-            ? `<form method="POST" action="" class="delete-form" onsubmit="return confirmDelete()">
-                   <input type="hidden" name="delete_transaction" value="1">
-                   <input type="hidden" name="transaction_id" value="${transaction.id}">
-                   <button type="submit" class="delete-btn" title="Dzēst">
-                       <i class="fa-solid fa-trash"></i>
-                   </button>
-               </form>`
-            : `<span class="delete-btn-disabled" title="Dzēst ikmēneša ierakstu avota mēnesī">
-                   <i class="fa-solid fa-lock"></i>
-               </span>`;
-        
-        html += `
-            <div class="transaction-item ${typeClass}">
-                <div class="transaction-info">
-                    <div class="transaction-description">${transaction.description} ${recurringBadge}</div>
-                    <div class="transaction-type">${typeLabel}</div>
+    if (transactions.length === 0) {
+        html = '<div class="no-transactions">Nav ierakstu šajā dienā.</div>';
+    } else {
+        transactions.forEach(transaction => {
+            const typeClass = transaction.type === 'income' ? 'income' : 'expense';
+            const typeLabel = transaction.type === 'income' ? 'Ienākums' : 'Izdevums';
+            const sign      = transaction.type === 'income' ? '+' : '-';
+            const recurringBadge = transaction.is_recurring_display
+                ? '<span class="recurring-badge"><i class="fa-solid fa-rotate"></i> Ikmēneša</span>' : '';
+            const recurringInfo = transaction.is_recurring_display
+                ? '<div class="transaction-note"></div>'
+                : '';
+            
+            const deleteBtn = `<form method="POST" action="" class="delete-form">
+                       <input type="hidden" name="delete_transaction" value="1">
+                       <input type="hidden" name="transaction_id" value="${transaction.id}">
+                       <button type="submit" class="delete-btn" title="Dzēst">
+                           <i class="fa-solid fa-trash"></i>
+                       </button>
+                   </form>`;
+            
+            html += `
+                <div class="transaction-item ${typeClass}">
+                    <div class="transaction-info">
+                        <div class="transaction-description">${transaction.description} ${recurringBadge}</div>
+                        <div class="transaction-type">${typeLabel}</div>
+                        ${recurringInfo}
+                    </div>
+                    <div class="transaction-right">
+                        <div class="transaction-amount">${sign}€${parseFloat(transaction.amount).toFixed(2)}</div>
+                        ${deleteBtn}
+                    </div>
                 </div>
-                <div class="transaction-right">
-                    <div class="transaction-amount">${sign}€${parseFloat(transaction.amount).toFixed(2)}</div>
-                    ${deleteBtn}
-                </div>
-            </div>
-        `;
-    });
+            `;
+        });
+    }
     
     content.innerHTML = html;
     modal.classList.add('modal-open');
     document.body.style.overflow = 'hidden';
-}
-
-function confirmDelete() {
-    return confirm('Vai tiešām vēlies dzēst šo ierakstu?');
 }
 
 // close day modal
@@ -98,6 +95,82 @@ function formatNumber(value) {
     return Number(value).toLocaleString('lv-LV', {
         minimumFractionDigits: 2,
         maximumFractionDigits: 2
+    });
+}
+
+function closeDeleteConfirm() {
+    const modal = document.getElementById('deleteConfirmModal');
+    if (!modal) return;
+    modal.classList.remove('modal-open');
+    document.body.style.overflow = 'auto';
+    setTimeout(() => modal.remove(), 250);
+}
+
+function showDeleteConfirm(onConfirm) {
+    let existing = document.getElementById('deleteConfirmModal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'deleteConfirmModal';
+    modal.className = 'modal modal-open';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Apstiprināt dzēšanu</h2>
+                <button type="button" class="modal-close" aria-label="Aizvērt">✕</button>
+            </div>
+            <div class="modal-body">
+                <p>Vai tiešām vēlies dzēst šo ierakstu? Šī darbība nevar tikt atsaukta.</p>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" id="deleteCancelBtn">Atcelt</button>
+                <button type="button" class="btn btn-danger" id="deleteConfirmBtn">
+                    <i class="fa-solid fa-trash"></i> Dzēst
+                </button>
+            </div>
+        </div>`;
+
+    document.body.appendChild(modal);
+    document.body.style.overflow = 'hidden';
+
+    modal.querySelector('.modal-close').addEventListener('click', closeDeleteConfirm);
+    modal.querySelector('#deleteCancelBtn').addEventListener('click', closeDeleteConfirm);
+    modal.querySelector('#deleteConfirmBtn').addEventListener('click', function() {
+        closeDeleteConfirm();
+        onConfirm();
+    });
+    modal.addEventListener('click', function(event) {
+        if (event.target === modal) closeDeleteConfirm();
+    });
+}
+
+function submitDeleteForm(form) {
+    const formData = new FormData(form);
+    formData.append('ajax', 1);
+
+    fetch('calendar.php', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'same-origin',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Failed to delete transaction');
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            closeDeleteConfirm();
+            closeDayModal();
+            loadCalendarMonth(currentMonth, currentYear, false);
+        } else {
+            form.dataset.skipAjax = '1';
+            form.submit();
+        }
+    })
+    .catch(() => {
+        form.dataset.skipAjax = '1';
+        form.submit();
     });
 }
 
@@ -218,6 +291,7 @@ function refreshCalendar(data, pushState = false) {
     renderCalendarGrid(data);
     updateCalendarHeader(data);
     attachCalendarNavHandlers();
+    attachCalendarDayHandlers();
 
     if (pushState && window.history && window.history.pushState) {
         window.history.pushState({ month: currentMonth, year: currentYear }, '', `?month=${currentMonth}&year=${currentYear}`);
@@ -251,6 +325,20 @@ function handleCalendarNavClick(event) {
     }
 }
 
+function onCalendarDayClick() {
+    const day = parseInt(this.dataset.day, 10);
+    if (Number.isFinite(day)) {
+        openDayModal(day, currentMonth, currentYear);
+    }
+}
+
+function attachCalendarDayHandlers() {
+    document.querySelectorAll('.calendar-day:not(.calendar-day-empty)').forEach(day => {
+        day.removeEventListener('click', onCalendarDayClick);
+        day.addEventListener('click', onCalendarDayClick);
+    });
+}
+
 function attachCalendarNavHandlers() {
     document.querySelectorAll('.calendar-nav').forEach(link => {
         link.removeEventListener('click', handleCalendarNavClick);
@@ -263,40 +351,50 @@ function handleTransactionFormSubmit(e) {
     const form = e.target;
     if (!(form instanceof HTMLFormElement)) return;
     if (form.dataset.skipAjax === '1') return;
-    if (!form.querySelector('input[name="add_income"], input[name="add_expense"]')) return;
+    if (form.querySelector('input[name="add_income"], input[name="add_expense"]')) {
+        e.preventDefault();
+        const formData = new FormData(form);
+        formData.append('ajax', 1);
 
-    e.preventDefault();
-    const formData = new FormData(form);
-    formData.append('ajax', 1);
-
-    fetch('calendar.php', {
-        method: 'POST',
-        headers: { 'X-Requested-With': 'XMLHttpRequest' },
-        credentials: 'same-origin',
-        body: formData
-    })
-    .then(response => {
-        if (!response.ok) throw new Error('Failed to submit transaction');
-        return response.json();
-    })
-    .then(data => {
-        if (data.success) {
-            closeIncomeModal();
-            closeExpenseModal();
-            loadCalendarMonth(currentMonth, currentYear, false);
-        } else {
+        fetch('calendar.php', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin',
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Failed to submit transaction');
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                closeIncomeModal();
+                closeExpenseModal();
+                loadCalendarMonth(currentMonth, currentYear, false);
+            } else {
+                form.dataset.skipAjax = '1';
+                form.submit();
+            }
+        })
+        .catch(() => {
             form.dataset.skipAjax = '1';
             form.submit();
-        }
-    })
-    .catch(() => {
-        form.dataset.skipAjax = '1';
-        form.submit();
-    });
+        });
+        return;
+    }
+
+    if (form.querySelector('input[name="delete_transaction"]')) {
+        e.preventDefault();
+        showDeleteConfirm(() => submitDeleteForm(form));
+        return;
+    }
+
+    return;
 }
 
 window.addEventListener('DOMContentLoaded', function() {
     attachCalendarNavHandlers();
+    attachCalendarDayHandlers();
     document.addEventListener('submit', handleTransactionFormSubmit);
 });
 
@@ -309,6 +407,8 @@ window.addEventListener('click', function(e) {
     if (wm && e.target === wm) closeWarningModal();
     const bm = document.getElementById('budgetWarningModal');
     if (bm && e.target === bm) closeBudgetWarningModal();
+    const dm = document.getElementById('deleteConfirmModal');
+    if (dm && e.target === dm) closeDeleteConfirm();
 });
 
 // close modal with esc
@@ -319,6 +419,7 @@ document.addEventListener('keydown', function(e) {
         closeDayModal();
         closeWarningModal();
         closeBudgetWarningModal();
+        closeDeleteConfirm();
     }
 });
 

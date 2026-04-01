@@ -266,6 +266,38 @@
     gap: 20px;
 }
 
+.modal-body {
+    padding: 24px 30px;
+    color: var(--text-primary);
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+.modal-actions {
+    display: flex;
+    gap: 12px;
+    justify-content: flex-end;
+    padding: 20px 30px 30px;
+}
+
+.modal-actions .btn {
+    min-width: 120px;
+}
+
+.transaction-note {
+    margin-top: 10px;
+    color: var(--text-secondary);
+    font-size: 13px;
+    line-height: 1.4;
+}
+
+.no-transactions {
+    padding: 24px 20px;
+    color: var(--text-secondary);
+    font-size: 16px;
+    text-align: center;
+}
+
 /* ── Amount input with prefix ────────────────────────────────────────────── */
 
 .amount-input-wrapper {

@@ -14,6 +14,9 @@ function is_ajax_request() {
 $user_id = $_SESSION['user_id'];
 $username = $_SESSION['username'];
 
+$current_month = isset($_GET['month']) ? intval($_GET['month']) : date('n');
+$current_year = isset($_GET['year']) ? intval($_GET['year']) : date('Y');
+
 // ── Load current currency from DB - always refresh to ensure latest preference ──────────────────────────
 $_SESSION['currency'] = 'EUR'; // Default
 $stmt = mysqli_prepare($savienojums,
@@ -40,6 +43,18 @@ $currencySymbols = [
     'KRW' => '<i class="fa-solid fa-won-sign"></i>'
 ];
 $currSymbol = $currencySymbols[$_SESSION['currency']] ?? '<i class="fa-solid fa-euro-sign"></i>';
+
+function ensureRecurringStopDateColumn($conn) {
+    $result = mysqli_query($conn, "SHOW COLUMNS FROM BU_transactions LIKE 'recurring_stop_date'");
+    if ($result && mysqli_num_rows($result) > 0) {
+        return true;
+    }
+    mysqli_query($conn, "ALTER TABLE BU_transactions ADD COLUMN recurring_stop_date DATE NULL");
+    $result2 = mysqli_query($conn, "SHOW COLUMNS FROM BU_transactions LIKE 'recurring_stop_date'");
+    return ($result2 && mysqli_num_rows($result2) > 0);
+}
+
+$hasRecurringStopDateColumn = ensureRecurringStopDateColumn($savienojums);
 
 //Income submit
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_income'])) {
@@ -99,13 +114,44 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_expense'])) {
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_transaction'])) {
     $transaction_id = intval($_POST['transaction_id']);
     
-    $stmt = mysqli_prepare($savienojums, "DELETE FROM BU_transactions WHERE id = ? AND user_id = ?");
+    $stmt = mysqli_prepare($savienojums, "SELECT date, is_recurring FROM BU_transactions WHERE id = ? AND user_id = ?");
+    $shouldDelete = true;
     if ($stmt) {
         mysqli_stmt_bind_param($stmt, "ii", $transaction_id, $user_id);
         mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        $row = mysqli_fetch_assoc($result);
         mysqli_stmt_close($stmt);
+
+        if ($row && intval($row['is_recurring']) === 1) {
+            $stop_date = date('Y-m-d', strtotime("$current_year-$current_month-01 -1 day"));
+            if ($row['date'] < "$current_year-$current_month-01" && $hasRecurringStopDateColumn) {
+                $ustmt = mysqli_prepare($savienojums, "UPDATE BU_transactions SET recurring_stop_date = ? WHERE id = ? AND user_id = ?");
+                if ($ustmt) {
+                    mysqli_stmt_bind_param($ustmt, "sii", $stop_date, $transaction_id, $user_id);
+                    mysqli_stmt_execute($ustmt);
+                    mysqli_stmt_close($ustmt);
+                    $shouldDelete = false;
+                }
+            }
+        }
+    }
+
+    if ($shouldDelete) {
+        $stmt = mysqli_prepare($savienojums, "DELETE FROM BU_transactions WHERE id = ? AND user_id = ?");
+        if ($stmt) {
+            mysqli_stmt_bind_param($stmt, "ii", $transaction_id, $user_id);
+            mysqli_stmt_execute($stmt);
+            mysqli_stmt_close($stmt);
+        }
     }
     
+    if (is_ajax_request()) {
+        header('Content-Type: application/json');
+        echo json_encode(['success' => true]);
+        exit();
+    }
+
     header('Location: calendar.php?month=' . $current_month . '&year=' . $current_year);
     exit();
 }
@@ -133,8 +179,18 @@ while ($row = mysqli_fetch_assoc($result)) {
 mysqli_stmt_close($stmt);
 
 // Get recurring transactions from previous months and add them to current month
-$stmt_recurring = mysqli_prepare($savienojums, "SELECT id, date, amount, type, description FROM BU_transactions WHERE user_id = ? AND is_recurring = 1 AND date < ? ORDER BY date ASC");
-mysqli_stmt_bind_param($stmt_recurring, "is", $user_id, $first_day);
+$recurringQuery = "SELECT id, date, amount, type, description FROM BU_transactions WHERE user_id = ? AND is_recurring = 1 AND date < ?";
+if ($hasRecurringStopDateColumn) {
+    $recurringQuery .= " AND (recurring_stop_date IS NULL OR recurring_stop_date >= ?)";
+}
+$recurringQuery .= " ORDER BY date ASC";
+
+$stmt_recurring = mysqli_prepare($savienojums, $recurringQuery);
+if ($hasRecurringStopDateColumn) {
+    mysqli_stmt_bind_param($stmt_recurring, "iss", $user_id, $first_day, $first_day);
+} else {
+    mysqli_stmt_bind_param($stmt_recurring, "is", $user_id, $first_day);
+}
 mysqli_stmt_execute($stmt_recurring);
 $recurring_result = mysqli_stmt_get_result($stmt_recurring);
 
