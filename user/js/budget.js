@@ -44,6 +44,58 @@ function closeEditModal() {
     document.body.style.overflow = 'auto';
 }
 
+// ─── Delete confirmation modal ─────────────────────────────────────────────────
+
+function closeBudgetDeleteConfirm() {
+    const modal = document.getElementById('budgetDeleteConfirmModal');
+    if (!modal) return;
+    modal.classList.remove('modal-open');
+    document.body.style.overflow = 'auto';
+    setTimeout(() => modal.remove(), 250);
+}
+
+function showBudgetDeleteConfirm(form, isGroup) {
+    let existing = document.getElementById('budgetDeleteConfirmModal');
+    if (existing) existing.remove();
+
+    const message = isGroup
+        ? 'Vai tiešām vēlies dzēst visus 4 cetur'+'kšņu budžetus? Šī darbība nevar tikt atsaukta.'
+        : 'Vai tiešām vēlies dzēst šo budžestu? Šī darbība nevar tikt atsaukta.';
+
+    const modal = document.createElement('div');
+    modal.id = 'budgetDeleteConfirmModal';
+    modal.className = 'modal modal-open';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Apstiprīnāt dzēšanu</h2>
+                <button type="button" class="modal-close" aria-label="Aizvērt">✕</button>
+            </div>
+            <div class="modal-body">
+                <p>${message}</p>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" id="budgetDeleteCancelBtn">Atcelt</button>
+                <button type="button" class="btn btn-danger" id="budgetDeleteConfirmBtn">
+                    <i class="fa-solid fa-trash"></i> Dzēst
+                </button>
+            </div>
+        </div>`;
+
+    document.body.appendChild(modal);
+    document.body.style.overflow = 'hidden';
+
+    modal.querySelector('.modal-close').addEventListener('click', closeBudgetDeleteConfirm);
+    modal.querySelector('#budgetDeleteCancelBtn').addEventListener('click', closeBudgetDeleteConfirm);
+    modal.querySelector('#budgetDeleteConfirmBtn').addEventListener('click', function () {
+        closeBudgetDeleteConfirm();
+        form.submit();
+    });
+    modal.addEventListener('click', function (event) {
+        if (event.target === modal) closeBudgetDeleteConfirm();
+    });
+}
+
 // Close modals when clicking outside
 window.onclick = function (event) {
     if (event.target.classList.contains('modal')) {
@@ -218,6 +270,12 @@ document.addEventListener('DOMContentLoaded', function () {
     const addHidden    = document.getElementById('add_recurring_days');
     const addStart     = document.getElementById('add_start_date');
     const addEnd       = document.getElementById('add_end_date');
+
+    if (addStart && addEnd) {
+        addStart.addEventListener('change', function () {
+            if (this.value) addEnd.min = this.value;
+        });
+    }
 
     if (addToggle && addContainer) {
         const addDatesGroup = document.getElementById('add_dates_group');

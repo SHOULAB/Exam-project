@@ -204,6 +204,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
 
             if (empty($start_date) || empty($end_date)) {
                 $error = 'Lūdzu norādiet sākuma un beigu datumus!';
+            } elseif ($end_date < $start_date) {
+                $error = 'Beigu datums nevar būt pirms sākuma datuma!';
             } else {
                 $stmt = mysqli_prepare($savienojums,
                     "INSERT INTO BU_budgets
@@ -536,9 +538,11 @@ $total_remaining = $total_budget_amount - $total_spent;
                                     </button>
                                 </div>
                                 <form method="POST" style="flex:1;"
-                                      onsubmit="return confirm('<?php echo !empty($budget['recurring_group_id']) ? 'Vai tiešām vēlies dzēst visus 4 ceturkšņu budžetus?' : 'Vai tiešām vēlies dzēst šo budžetu?'; ?>')">                                    <input type="hidden" name="action" value="delete">
+                                      id="deleteForm_<?php echo $budget['id']; ?>">
+                                    <input type="hidden" name="action" value="delete">
                                     <input type="hidden" name="budget_id" value="<?php echo $budget['id']; ?>">
-                                    <button type="submit" class="btn btn-danger btn-small" style="width:100%;">
+                                    <button type="button" class="btn btn-danger btn-small" style="width:100%;"
+                                            onclick="showBudgetDeleteConfirm(this.closest('form'), <?php echo !empty($budget['recurring_group_id']) ? 'true' : 'false'; ?>)">
                                         <i class="fa-solid fa-trash"></i> Dzēst
                                     </button>
                                 </form>
