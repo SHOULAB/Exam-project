@@ -38,6 +38,45 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+// ─── Logout confirmation modal ────────────────────────────────────────────────
+function showLogoutConfirm() {
+    let existing = document.getElementById('logoutConfirmModal');
+    if (existing) existing.remove();
+
+    const modal = document.createElement('div');
+    modal.id = 'logoutConfirmModal';
+    modal.className = 'modal modal-open';
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title">Iziet no konta</h2>
+                <button type="button" class="modal-close" aria-label="Aizvērt">✕</button>
+            </div>
+            <div class="modal-body">
+                <p>Vai tiešām vēlies iziet no sava konta?</p>
+            </div>
+            <div class="modal-actions">
+                <button type="button" class="btn btn-secondary" id="logoutCancelBtn">Atcelt</button>
+                <a href="logout.php" class="btn btn-danger">
+                    <i class="fas fa-sign-out-alt"></i> Iziet
+                </a>
+            </div>
+        </div>`;
+
+    document.body.appendChild(modal);
+    document.body.style.overflow = 'hidden';
+
+    const close = () => {
+        modal.classList.remove('modal-open');
+        document.body.style.overflow = 'auto';
+        setTimeout(() => modal.remove(), 250);
+    };
+
+    modal.querySelector('.modal-close').addEventListener('click', close);
+    modal.querySelector('#logoutCancelBtn').addEventListener('click', close);
+    modal.addEventListener('click', e => { if (e.target === modal) close(); });
+}
+
 // Form validation for login
 const loginForm = document.getElementById('loginForm');
 if (loginForm) {

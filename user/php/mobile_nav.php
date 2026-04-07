@@ -19,7 +19,7 @@
         <i class="fa-solid fa-wallet"></i>
         <span>Budžets</span>
     </a>
-    <a href="#" class="mobile-nav-item <?php echo ($active_page === 'settings')  ? 'active' : ''; ?>">
+    <a href="settings.php" class="mobile-nav-item <?php echo ($active_page === 'settings')  ? 'active' : ''; ?>">
         <i class="fa-solid fa-gear"></i>
         <span>Iestatījumi</span>
     </a>

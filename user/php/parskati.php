@@ -131,7 +131,7 @@ $ratio = $alltime['expense'] > 0 ? round($alltime['income'] / $alltime['expense'
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pārskati - Budgetiva</title>
+    <title>Pārskati - Budgetar</title>
     <link rel="icon" href="../../assets/image/logo.png" type="image/png">
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../css/dashboard.css">

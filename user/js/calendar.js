@@ -295,7 +295,6 @@ function refreshCalendar(data, pushState = false) {
 
     if (pushState && window.history && window.history.pushState) {
         window.history.pushState({ month: currentMonth, year: currentYear }, '', `?month=${currentMonth}&year=${currentYear}`);
-        document.title = `Kalendārs - ${data.month_name} ${currentYear} - Budgetiva`;
     }
 }
 
