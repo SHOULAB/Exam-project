@@ -19,8 +19,7 @@
 }
 
 .budget-card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    border-color: rgba(255, 255, 255, 0.15);
 }
 
 .budget-card-header {
@@ -54,9 +53,10 @@
     white-space: nowrap;
 }
 
-.status-active  { background: rgba(16, 185, 129, 0.2); color: var(--success); }
-.status-expired { background: rgba(239, 68, 68, 0.2);  color: var(--danger); }
-.status-warning { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+.status-active   { background: rgba(16, 185, 129, 0.2); color: var(--success); }
+.status-expired  { background: rgba(239, 68, 68, 0.2);  color: var(--danger); }
+.status-warning  { background: rgba(245, 158, 11, 0.2); color: var(--warning); }
+.status-upcoming { background: rgba(99, 102, 241, 0.2); color: #818cf8; }
 
 /* ── Budget amounts ──────────────────────────────────────────────────────── */
 
@@ -92,7 +92,7 @@
 }
 
 .progress-safe    { background: linear-gradient(135deg, var(--success) 0%, #34d399 100%); }
-.progress-warning { background: linear-gradient(135deg, var(--warning) 0%, #0d9488 100%); }
+.progress-warning { background: linear-gradient(135deg, var(--warning) 0%, var(--primary-dark) 100%); }
 .progress-danger  { background: linear-gradient(135deg, var(--danger)  0%, #dc2626 100%); }
 
 /* ── Budget card action row ──────────────────────────────────────────────── */
@@ -120,6 +120,23 @@
     border-radius: 12px;
     white-space: nowrap;
     vertical-align: middle;
+}
+
+/* ── Quarter badge ───────────────────────────────────────────────────────── */
+
+.quarter-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(99, 102, 241, 0.18);
+    border: 1px solid rgba(99, 102, 241, 0.4);
+    color: #818cf8;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 12px;
+    white-space: nowrap;
+    letter-spacing: 0.5px;
 }
 
 /* ── Day-picker pill row ─────────────────────────────────────────────────── */
@@ -262,116 +279,6 @@
     outline: 2px solid var(--primary);
     outline-offset: 2px;
 }
-
-/* ── Budget-exceed warning modal ─────────────────────────────────────────── */
-
-.bw-modal-content { max-width: 520px; }
-
-.bw-modal-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 12px;
-    padding-bottom: 16px;
-    border-bottom: 1px solid var(--border);
-}
-
-.bw-title-wrap { display: flex; align-items: center; gap: 14px; }
-
-.bw-title-icon {
-    width: 44px;
-    height: 44px;
-    border-radius: 12px;
-    background: rgba(245, 158, 11, 0.15);
-    color: var(--warning);
-    font-size: 20px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-    animation: bw-pulse 1.8s ease-in-out infinite;
-}
-
-@keyframes bw-pulse {
-    0%, 100% { box-shadow: 0 0 0 0 rgba(245,158,11,0.3); }
-    50%       { box-shadow: 0 0 0 8px rgba(245,158,11,0); }
-}
-
-.bw-subtitle { font-size: 13px; color: var(--text-secondary); margin-top: 3px; }
-
-.bw-body { padding: 20px 0 4px; display: flex; flex-direction: column; gap: 14px; }
-
-.bw-budget-row {
-    background: rgba(255,255,255,0.04);
-    border: 1px solid var(--border);
-    border-left: 3px solid var(--warning);
-    border-radius: 10px;
-    padding: 14px 16px;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-}
-
-.bw-budget-name   { display: flex; align-items: center; gap: 8px; font-size: 14px; color: var(--text-primary); }
-.bw-budget-name i { color: var(--warning); }
-
-.bw-budget-stats  { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 16px; }
-.bw-stat          { display: flex; justify-content: space-between; font-size: 13px; }
-
-.bw-stat-over {
-    grid-column: 1 / -1;
-    padding-top: 6px;
-    border-top: 1px solid var(--border);
-    font-weight: 700;
-}
-
-.bw-stat-label       { color: var(--text-secondary); }
-.bw-stat-val         { font-weight: 600; color: var(--text-primary); }
-.bw-stat-val.expense { color: var(--danger); }
-.bw-stat-val.deficit { color: var(--danger); font-size: 15px; }
-
-.bw-progress-wrap  { display: flex; align-items: center; gap: 10px; }
-
-.bw-progress-track {
-    flex: 1;
-    height: 6px;
-    background: rgba(255,255,255,0.08);
-    border-radius: 99px;
-    overflow: hidden;
-    display: flex;
-}
-
-.bw-progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, var(--success), var(--warning));
-    border-radius: 99px 0 0 99px;
-    transition: width 0.4s ease;
-}
-
-.bw-progress-over {
-    height: 100%;
-    background: var(--danger);
-    border-radius: 0 99px 99px 0;
-    transition: width 0.4s ease;
-}
-
-.bw-pct { font-size: 11px; color: var(--text-secondary); white-space: nowrap; }
-
-.bw-question {
-    text-align: center;
-    font-size: 14px;
-    color: var(--text-secondary);
-    padding: 4px 0 0;
-}
-
-.bw-actions {
-    display: flex;
-    gap: 12px;
-    padding-top: 16px;
-    border-top: 1px solid var(--border);
-}
-
-.bw-actions .btn { flex: 1; justify-content: center; }
 
 /* ── Budget-exceed warning modal ─────────────────────────────────────────── */
 

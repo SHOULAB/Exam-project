@@ -43,7 +43,7 @@
 
 .val-income  { color: var(--success); }
 .val-expense { color: var(--danger); }
-.val-balance { color: #14b8a6; }
+.val-balance { color: var(--primary); }
 .val-savings { color: var(--warning); }
 .val-neutral { color: var(--text-primary); }
 

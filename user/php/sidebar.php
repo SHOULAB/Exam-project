@@ -39,8 +39,11 @@
             <div class="user-avatar"><?php echo strtoupper(substr($username, 0, 1)); ?></div>
             <div class="user-details">
                 <div class="user-name"><?php echo htmlspecialchars($username); ?></div>
-                <a href="logout.php" class="user-logout">Iziet</a>
             </div>
+            <a href="logout.php" class="user-logout" title="Iziet"
+               onclick="event.preventDefault(); showLogoutConfirm();">
+                <i class="fas fa-sign-out-alt"></i>
+            </a>
         </div>
     </div>
 </aside>

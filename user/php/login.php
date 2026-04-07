@@ -168,10 +168,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="auth-card">
             <div class="auth-header">
                 <a href="index.php" class="back-link">← Atpakaļ</a>
-                <div class="auth-logo">
-                    <img src="../../assets/image/logo.png" alt="Budgetiva Logo" class="logo-img">
-                    <span class="logo-text">Budgetiva</span>
-                </div>
                 <h1 class="auth-title">Laipni lūdzam atpakaļ!</h1>
                 <p class="auth-subtitle">Ielogojieties, lai turpinātu</p>
             </div>

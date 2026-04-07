@@ -124,8 +124,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_transaction'])
         mysqli_stmt_close($stmt);
 
         if ($row && intval($row['is_recurring']) === 1) {
-            $stop_date = date('Y-m-d', strtotime("$current_year-$current_month-01 -1 day"));
-            if ($row['date'] < "$current_year-$current_month-01" && $hasRecurringStopDateColumn) {
+            $month_first = sprintf('%04d-%02d-01', $current_year, $current_month);
+            $stop_date = date('Y-m-d', strtotime("$month_first -1 day"));
+            if ($row['date'] < $month_first && $hasRecurringStopDateColumn) {
                 $ustmt = mysqli_prepare($savienojums, "UPDATE BU_transactions SET recurring_stop_date = ? WHERE id = ? AND user_id = ?");
                 if ($ustmt) {
                     mysqli_stmt_bind_param($ustmt, "sii", $stop_date, $transaction_id, $user_id);
@@ -355,7 +356,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kalendārs - Budgetiva</title>
+    <title>Kalendārs - Budgetar</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../css/dashboard.css">
     <link rel="stylesheet" href="../css/calendar.css">

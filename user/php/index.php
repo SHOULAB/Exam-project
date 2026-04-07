@@ -6,7 +6,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Budgetiva - Finanšu Pārvaldības Sistēma</title>
+    <title>Budgetar</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="stylesheet" href="../css/index.css">
     <link rel="icon" href="../../assets/image/logo.png" type="image/png">
@@ -27,7 +27,7 @@
         <main class="hero">
             <div class="hero-content">
                 <h1 class="hero-title">
-                    Pārvaldi savas finanses
+                    Pārskati savas finanses
                     <span class="switching-text-wrapper">
                         <b class="word-placeholder gradient-text">vienkārši un efektīvi</b>
                         <span class="switching-text">
@@ -38,7 +38,7 @@
                     </span>
                 </h1>
                 <p class="hero-description">
-                    Budgetiva palīdz tev sekot līdzi ienākumiem un izdevumiem, 
+                    Budgetar palīdz tev sekot līdzi ienākumiem un izdevumiem, 
                     analizēt finanšu plūsmas un sasniegt savus finanšu mērķus.
                 </p>
                 <div class="hero-buttons">
@@ -85,7 +85,7 @@
 
         <footer class="footer">
             <div class="footer-content">
-                <p class="footer-text">2025 Budgetiva | Dagnis Janeks 4PT</p>
+                <p class="footer-text">2025 Budgetar | Dagnis Janeks 4PT</p>
             </div>
         </footer>
     </div>

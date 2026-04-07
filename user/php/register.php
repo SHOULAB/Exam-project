@@ -101,10 +101,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <div class="auth-card">
             <div class="auth-header">
                 <a href="index.php" class="back-link">← Atpakaļ</a>
-                <div class="auth-logo">
-                    <img src="../../assets/image/logo.png" alt="Budgetar Logo" class="logo-img">
-                    <span class="logo-text">Budgetar</span>
-                </div>
                 <h1 class="auth-title">Izveido kontu</h1>
                 <p class="auth-subtitle">Sāc pārvaldīt savas finanses šodien</p>
             </div>
@@ -208,19 +204,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <h2 class="visual-title">Sāc gudri pārvaldīt savas finanses</h2>
                 <div class="visual-features">
                     <div class="visual-feature">
-                        <span class="visual-icon">✓</span>
+                        <span class="visual-icon"><i class="fa-solid fa-shield-halved"></i></span>
                         <span>Bezmaksas un droša reģistrācija</span>
                     </div>
                     <div class="visual-feature">
-                        <span class="visual-icon">✓</span>
+                        <span class="visual-icon"><i class="fa-solid fa-lock"></i></span>
                         <span>Visi dati šifrēti</span>
                     </div>
                     <div class="visual-feature">
-                        <span class="visual-icon">✓</span>
+                        <span class="visual-icon"><i class="fa-solid fa-mobile-screen"></i></span>
                         <span>Pieejams no jebkuras ierīces</span>
                     </div>
                     <div class="visual-feature">
-                        <span class="visual-icon">✓</span>
+                        <span class="visual-icon"><i class="fa-solid fa-clock"></i></span>
                         <span>24/7 piekļuve savām finansēm</span>
                     </div>
                 </div>

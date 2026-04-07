@@ -101,13 +101,18 @@ function refreshRecurringBudgets($conn, $uid): void {
     // Guard: silently skip if migration columns don't exist yet
     $check = mysqli_query($conn, "SHOW COLUMNS FROM BU_budgets LIKE 'is_recurring'");
     if (!$check || mysqli_num_rows($check) === 0) return;
+    $check2 = mysqli_query($conn, "SHOW COLUMNS FROM BU_budgets LIKE 'quarter_label'");
+    $has_quarter = ($check2 && mysqli_num_rows($check2) > 0);
 
     $today = date('Y-m-d');
+
+    $quarter_filter = $has_quarter ? " AND (quarter_label IS NULL OR quarter_label = '')" : '';
 
     $stmt = mysqli_prepare($conn,
         "SELECT id, start_date, end_date, recurring_days
          FROM   BU_budgets
-         WHERE  user_id = ? AND is_recurring = 1 AND end_date < ?");
+         WHERE  user_id = ? AND is_recurring = 1 AND end_date < ?
+                {$quarter_filter}");
     mysqli_stmt_bind_param($stmt, "is", $uid, $today);
     mysqli_stmt_execute($stmt);
     $result = mysqli_stmt_get_result($stmt);
@@ -132,6 +137,10 @@ function refreshRecurringBudgets($conn, $uid): void {
 
 refreshRecurringBudgets($savienojums, $user_id);
 
+// ─── Ensure quarterly columns exist (safe migration) ─────────────────────────
+mysqli_query($savienojums, "ALTER TABLE BU_budgets ADD COLUMN IF NOT EXISTS quarter_label VARCHAR(2) NULL DEFAULT NULL");
+mysqli_query($savienojums, "ALTER TABLE BU_budgets ADD COLUMN IF NOT EXISTS recurring_group_id VARCHAR(36) NULL DEFAULT NULL");
+
 // ─── Handle POST actions ──────────────────────────────────────────────────────
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     $action = $_POST['action'];
@@ -151,40 +160,72 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $is_recurring   = 0;
         }
 
-        // Dates: calculate server-side for recurring budgets so that
-        // the JS-disabled inputs not submitting is never a problem.
-        if ($is_recurring && $recurring_days !== '') {
-            $dates      = calcRecurringDatesPHP($recurring_days);
-            $start_date = $dates['start'];
-            $end_date   = $dates['end'];
-        } else {
-            $start_date = trim($_POST['start_date'] ?? '');
-            $end_date   = trim($_POST['end_date']   ?? '');
-        }
-
         if (empty($budget_name) || $budget_amount <= 0) {
             $error = 'Lūdzu aizpildiet visus obligātos laukus!';
-        } elseif (empty($start_date) || empty($end_date)) {
-            $error = 'Lūdzu norādiet sākuma un beigu datumus!';
-        } else {
-            $stmt = mysqli_prepare($savienojums,
-                "INSERT INTO BU_budgets
-                    (user_id, budget_name, budget_amount, budget_period,
-                     start_date, end_date, warning_threshold,
-                     recurring_days, is_recurring, created_at)
-                 VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
-            mysqli_stmt_bind_param($stmt, "isdsssdsi",
-                $user_id, $budget_name, $budget_amount, $budget_period,
-                $start_date, $end_date, $warning_threshold,
-                $recurring_days, $is_recurring);
+        } elseif ($is_recurring) {
+            // ── Create 4 quarterly instances for the current year ─────────────
+            $year     = date('Y');
+            $quarters = [
+                'Q1' => [$year . '-01-01', $year . '-03-31'],
+                'Q2' => [$year . '-04-01', $year . '-06-30'],
+                'Q3' => [$year . '-07-01', $year . '-09-30'],
+                'Q4' => [$year . '-10-01', $year . '-12-31'],
+            ];
+            $group_id = uniqid('qg_', true);
+            $all_ok   = true;
 
-            if (mysqli_stmt_execute($stmt)) {
+            foreach ($quarters as $q_label => [$q_start, $q_end]) {
+                $period = 'quarterly';
+                $stmt = mysqli_prepare($savienojums,
+                    "INSERT INTO BU_budgets
+                        (user_id, budget_name, budget_amount, budget_period,
+                         start_date, end_date, warning_threshold,
+                         recurring_days, is_recurring, quarter_label,
+                         recurring_group_id, created_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+                mysqli_stmt_bind_param($stmt, "isdsssdsiss",
+                    $user_id, $budget_name, $budget_amount, $period,
+                    $q_start, $q_end, $warning_threshold,
+                    $recurring_days, $is_recurring, $q_label, $group_id);
+
+                if (!mysqli_stmt_execute($stmt)) $all_ok = false;
                 mysqli_stmt_close($stmt);
+            }
+
+            if ($all_ok) {
                 header('Location: budget.php?msg=added');
                 exit();
             } else {
                 $error = 'Kļūda pievienojot budžetu!';
-                mysqli_stmt_close($stmt);
+            }
+        } else {
+            $start_date = trim($_POST['start_date'] ?? '');
+            $end_date   = trim($_POST['end_date']   ?? '');
+
+            if (empty($start_date) || empty($end_date)) {
+                $error = 'Lūdzu norādiet sākuma un beigu datumus!';
+            } elseif ($end_date < $start_date) {
+                $error = 'Beigu datums nevar būt pirms sākuma datuma!';
+            } else {
+                $stmt = mysqli_prepare($savienojums,
+                    "INSERT INTO BU_budgets
+                        (user_id, budget_name, budget_amount, budget_period,
+                         start_date, end_date, warning_threshold,
+                         recurring_days, is_recurring, created_at)
+                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())");
+                mysqli_stmt_bind_param($stmt, "isdsssdsi",
+                    $user_id, $budget_name, $budget_amount, $budget_period,
+                    $start_date, $end_date, $warning_threshold,
+                    $recurring_days, $is_recurring);
+
+                if (mysqli_stmt_execute($stmt)) {
+                    mysqli_stmt_close($stmt);
+                    header('Location: budget.php?msg=added');
+                    exit();
+                } else {
+                    $error = 'Kļūda pievienojot budžetu!';
+                    mysqli_stmt_close($stmt);
+                }
             }
         }
     }
@@ -192,9 +233,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
     // ── DELETE ────────────────────────────────────────────────────────────────
     if ($action === 'delete' && isset($_POST['budget_id'])) {
         $budget_id = intval($_POST['budget_id']);
-        $stmt = mysqli_prepare($savienojums,
-            "DELETE FROM BU_budgets WHERE id = ? AND user_id = ?");
-        mysqli_stmt_bind_param($stmt, "ii", $budget_id, $user_id);
+
+        // Check if this budget belongs to a quarterly group
+        $fetch = mysqli_prepare($savienojums,
+            "SELECT recurring_group_id FROM BU_budgets WHERE id = ? AND user_id = ?");
+        mysqli_stmt_bind_param($fetch, "ii", $budget_id, $user_id);
+        mysqli_stmt_execute($fetch);
+        $budget_info = mysqli_fetch_assoc(mysqli_stmt_get_result($fetch));
+        mysqli_stmt_close($fetch);
+
+        if (!empty($budget_info['recurring_group_id'])) {
+            $gid  = $budget_info['recurring_group_id'];
+            $stmt = mysqli_prepare($savienojums,
+                "DELETE FROM BU_budgets WHERE recurring_group_id = ? AND user_id = ?");
+            mysqli_stmt_bind_param($stmt, "si", $gid, $user_id);
+        } else {
+            $stmt = mysqli_prepare($savienojums,
+                "DELETE FROM BU_budgets WHERE id = ? AND user_id = ?");
+            mysqli_stmt_bind_param($stmt, "ii", $budget_id, $user_id);
+        }
 
         if (mysqli_stmt_execute($stmt)) {
             mysqli_stmt_close($stmt);
@@ -221,15 +278,39 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $is_recurring   = 0;
         }
 
-        $stmt = mysqli_prepare($savienojums,
-            "UPDATE BU_budgets
-             SET budget_name = ?, budget_amount = ?, warning_threshold = ?,
-                 recurring_days = ?, is_recurring = ?
-             WHERE id = ? AND user_id = ?");
-        mysqli_stmt_bind_param($stmt, "sddsiii",
-            $budget_name, $budget_amount, $warning_threshold,
-            $recurring_days, $is_recurring,
-            $budget_id, $user_id);
+        // Check if this budget belongs to a quarterly group
+        $fetch = mysqli_prepare($savienojums,
+            "SELECT recurring_group_id, is_recurring FROM BU_budgets WHERE id = ? AND user_id = ?");
+        mysqli_stmt_bind_param($fetch, "ii", $budget_id, $user_id);
+        mysqli_stmt_execute($fetch);
+        $budget_info = mysqli_fetch_assoc(mysqli_stmt_get_result($fetch));
+        mysqli_stmt_close($fetch);
+
+        // For recurring/quarterly budgets, require at least one day
+        if (!empty($budget_info['is_recurring']) && empty($recurring_days)) {
+            $error = 'Vismaz viena nedēļas diena ir obligāta!';
+        } else {
+        if (!empty($budget_info['recurring_group_id'])) {
+            $gid  = $budget_info['recurring_group_id'];
+            $stmt = mysqli_prepare($savienojums,
+                "UPDATE BU_budgets
+                 SET budget_name = ?, budget_amount = ?, warning_threshold = ?,
+                     recurring_days = ?
+                 WHERE recurring_group_id = ? AND user_id = ?");
+            mysqli_stmt_bind_param($stmt, "sddssi",
+                $budget_name, $budget_amount, $warning_threshold,
+                $recurring_days, $gid, $user_id);
+        } else {
+            $stmt = mysqli_prepare($savienojums,
+                "UPDATE BU_budgets
+                 SET budget_name = ?, budget_amount = ?, warning_threshold = ?,
+                     recurring_days = ?, is_recurring = ?
+                 WHERE id = ? AND user_id = ?");
+            mysqli_stmt_bind_param($stmt, "sddsiii",
+                $budget_name, $budget_amount, $warning_threshold,
+                $recurring_days, $is_recurring,
+                $budget_id, $user_id);
+        }
 
         if (mysqli_stmt_execute($stmt)) {
             mysqli_stmt_close($stmt);
@@ -239,6 +320,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $error = 'Kļūda atjauninot budžetu!';
             mysqli_stmt_close($stmt);
         }
+        } // end else (at least one day check)
     }
 }
 
@@ -374,10 +456,15 @@ $total_remaining = $total_budget_amount - $total_spent;
             <?php else: ?>
                 <div class="budgets-grid">
                     <?php foreach ($budgets as $budget):
-                        $is_active  = strtotime($budget['end_date']) >= time();
-                        $percentage = min($budget['percentage'], 100);
+                        $is_active   = strtotime($budget['end_date'])   >= time();
+                        $is_upcoming = strtotime($budget['start_date']) >  time();
+                        $percentage  = min($budget['percentage'], 100);
 
-                        if (!$is_active) {
+                        if ($is_upcoming) {
+                            $status_class   = 'status-upcoming';
+                            $status_text    = 'Gaidāmais';
+                            $progress_class = 'progress-safe';
+                        } elseif (!$is_active) {
                             $status_class   = 'status-expired';
                             $status_text    = 'Beidzies';
                             $progress_class = 'progress-danger';
@@ -398,7 +485,11 @@ $total_remaining = $total_budget_amount - $total_spent;
                                         <i class="fa-solid fa-wallet"></i>
                                         <?php echo htmlspecialchars($budget['budget_name']); ?>
 
-                                        <?php if (!empty($budget['recurring_days'])): ?>
+                                        <?php if (!empty($budget['quarter_label'])): ?>
+                                            <span class="quarter-badge quarter-<?php echo strtolower($budget['quarter_label']); ?>">
+                                                <?php echo htmlspecialchars($budget['quarter_label']); ?>
+                                            </span>
+                                        <?php elseif (!empty($budget['recurring_days'])): ?>
                                             <span class="recurring-card-badge"
                                                   title="Recurring: <?php echo htmlspecialchars(recurringDayLabel($budget['recurring_days'])); ?>">
                                                 <i class="fa-solid fa-arrows-rotate"></i>
@@ -440,15 +531,18 @@ $total_remaining = $total_budget_amount - $total_spent;
                             </div>
 
                             <div class="budget-actions">
-                                <button class="btn btn-secondary btn-small" style="flex:1;"
-                                        onclick='openEditModal(<?php echo json_encode($budget); ?>)'>
-                                    <i class="fa-solid fa-pencil"></i> Rediģēt
-                                </button>
+                                <div style="flex:1;">
+                                    <button class="btn btn-secondary btn-small" style="width:100%;"
+                                            onclick='openEditModal(<?php echo json_encode($budget); ?>)'>
+                                        <i class="fa-solid fa-pencil"></i> Rediģēt
+                                    </button>
+                                </div>
                                 <form method="POST" style="flex:1;"
-                                      onsubmit="return confirm('Vai tiešām vēlies dzēst šo budžetu?')">
+                                      id="deleteForm_<?php echo $budget['id']; ?>">
                                     <input type="hidden" name="action" value="delete">
                                     <input type="hidden" name="budget_id" value="<?php echo $budget['id']; ?>">
-                                    <button type="submit" class="btn btn-danger btn-small" style="width:100%;">
+                                    <button type="button" class="btn btn-danger btn-small" style="width:100%;"
+                                            onclick="showBudgetDeleteConfirm(this.closest('form'), <?php echo !empty($budget['recurring_group_id']) ? 'true' : 'false'; ?>)">
                                         <i class="fa-solid fa-trash"></i> Dzēst
                                     </button>
                                 </form>
@@ -582,41 +676,24 @@ $total_remaining = $total_budget_amount - $total_spent;
                            class="form-input" min="0" max="100" required>
                 </div>
 
-                <!-- ── RECURRING SCHEDULE ─────────────────────────────────── -->
-                <div class="form-group">
-                    <div class="recurring-toggle-row">
-                        <div class="recurring-toggle-label">
-                            <div class="recurring-toggle-icon">
-                                <i class="fa-solid fa-arrows-rotate"></i>
-                            </div>
-                            <div>
-                                <div class="recurring-toggle-title">Recurring weekly schedule</div>
-                                <div class="recurring-toggle-sub">Auto-refreshes every week on selected days</div>
-                            </div>
+                <!-- ── RECURRING DAYS (edit) ───────────────────────────── -->
+                <div class="form-group" id="edit_recurring_section" style="display:none;">
+                    <div style="padding: 14px 16px; background: rgba(20,184,166,0.06); border: 1px solid rgba(20,184,166,0.18); border-radius: 8px;">
+                        <div class="day-picker" id="edit_recurring_days_container">
+                            <button type="button" class="day-pill" data-day="1">P</button>
+                            <button type="button" class="day-pill" data-day="2">O</button>
+                            <button type="button" class="day-pill" data-day="3">T</button>
+                            <button type="button" class="day-pill" data-day="4">C</button>
+                            <button type="button" class="day-pill" data-day="5">Pk</button>
+                            <button type="button" class="day-pill" data-day="6">S</button>
+                            <button type="button" class="day-pill" data-day="0">Sv</button>
                         </div>
-                        <label class="custom-toggle">
-                            <input type="checkbox" id="edit_recurring_toggle">
-                            <span class="custom-toggle-track">
-                                <span class="custom-toggle-thumb"></span>
-                            </span>
-                        </label>
+                        <small style="color:var(--text-secondary); font-size:12px; margin-top:10px; display:block;">
+                            Vismaz viena diena ir obligāta
+                        </small>
                     </div>
-
-                    <div id="edit_recurring_days_container" style="display:none; margin-top:12px;">
-                        <div class="day-picker">
-                            <button type="button" class="day-pill" data-day="1">Mon</button>
-                            <button type="button" class="day-pill" data-day="2">Tue</button>
-                            <button type="button" class="day-pill" data-day="3">Wed</button>
-                            <button type="button" class="day-pill" data-day="4">Thu</button>
-                            <button type="button" class="day-pill" data-day="5">Fri</button>
-                            <button type="button" class="day-pill" data-day="6">Sat</button>
-                            <button type="button" class="day-pill" data-day="0">Sun</button>
-                        </div>
-                        <div id="edit_recurring_preview" class="recurring-preview"
-                             style="display:none;"></div>
-                    </div>
-                    <input type="hidden" name="recurring_days" id="edit_recurring_days">
                 </div>
+                <input type="hidden" name="recurring_days" id="edit_recurring_days">
                 <!-- ── END RECURRING ──────────────────────────────────────── -->
 
                 <button type="submit" class="btn btn-primary btn-full">

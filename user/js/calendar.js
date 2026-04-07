@@ -38,6 +38,7 @@ function openDayModal(day, month, year) {
     const monthNames = ['', 'Janvāris', 'Februāris', 'Marts', 'Aprīlis', 'Maijs', 'Jūnijs', 
                         'Jūlijs', 'Augusts', 'Septembris', 'Oktobris', 'Novembris', 'Decembris'];
     title.textContent = `${day}. ${monthNames[month]}, ${year}`;
+    window._dayModalOpenDay = day;
     
     const transactions = Array.isArray(transactionsData[day]) ? transactionsData[day] : (Array.isArray(transactionsData[String(day)]) ? transactionsData[String(day)] : []);
     let html = '';
@@ -55,13 +56,10 @@ function openDayModal(day, month, year) {
                 ? '<div class="transaction-note"></div>'
                 : '';
             
-            const deleteBtn = `<form method="POST" action="" class="delete-form">
-                       <input type="hidden" name="delete_transaction" value="1">
-                       <input type="hidden" name="transaction_id" value="${transaction.id}">
-                       <button type="submit" class="delete-btn" title="Dzēst">
-                           <i class="fa-solid fa-trash"></i>
-                       </button>
-                   </form>`;
+            const deleteBtn = `<button type="button" class="delete-btn" title="Dzēst"
+                       onclick="handleDeleteClick(${parseInt(transaction.id, 10)})">
+                       <i class="fa-solid fa-trash"></i>
+                   </button>`;
             
             html += `
                 <div class="transaction-item ${typeClass}">
@@ -89,6 +87,7 @@ function closeDayModal() {
     const modal = document.getElementById('dayModal');
     modal.classList.remove('modal-open');
     document.body.style.overflow = 'auto';
+    window._dayModalOpenDay = null;
 }
 
 function formatNumber(value) {
@@ -144,6 +143,39 @@ function showDeleteConfirm(onConfirm) {
     });
 }
 
+function handleDeleteClick(transactionId) {
+    showDeleteConfirm(function () {
+        const formData = new FormData();
+        formData.append('delete_transaction', '1');
+        formData.append('transaction_id', transactionId);
+
+        fetch('calendar.php', {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            credentials: 'same-origin',
+            body: formData
+        })
+        .then(function (response) {
+            if (!response.ok) throw new Error('Failed to delete transaction');
+            return response.json();
+        })
+        .then(function (data) {
+            if (data.success) {
+                closeDeleteConfirm();
+                const savedDay = window._dayModalOpenDay;
+                loadCalendarMonth(currentMonth, currentYear, false, function() {
+                    if (savedDay) openDayModal(savedDay, currentMonth, currentYear);
+                });
+            } else {
+                window.location.href = 'calendar.php?month=' + currentMonth + '&year=' + currentYear;
+            }
+        })
+        .catch(function () {
+            window.location.href = 'calendar.php?month=' + currentMonth + '&year=' + currentYear;
+        });
+    });
+}
+
 function submitDeleteForm(form) {
     const formData = new FormData(form);
     formData.append('ajax', 1);
@@ -161,8 +193,10 @@ function submitDeleteForm(form) {
     .then(data => {
         if (data.success) {
             closeDeleteConfirm();
-            closeDayModal();
-            loadCalendarMonth(currentMonth, currentYear, false);
+            const savedDay = window._dayModalOpenDay;
+            loadCalendarMonth(currentMonth, currentYear, false, function() {
+                if (savedDay) openDayModal(savedDay, currentMonth, currentYear);
+            });
         } else {
             form.dataset.skipAjax = '1';
             form.submit();
@@ -295,11 +329,10 @@ function refreshCalendar(data, pushState = false) {
 
     if (pushState && window.history && window.history.pushState) {
         window.history.pushState({ month: currentMonth, year: currentYear }, '', `?month=${currentMonth}&year=${currentYear}`);
-        document.title = `Kalendārs - ${data.month_name} ${currentYear} - Budgetiva`;
     }
 }
 
-function loadCalendarMonth(month, year, pushState = true) {
+function loadCalendarMonth(month, year, pushState = true, onDone = null) {
     fetch(`calendar.php?month=${month}&year=${year}&ajax=1`, {
         credentials: 'same-origin'
     })
@@ -310,6 +343,7 @@ function loadCalendarMonth(month, year, pushState = true) {
     .then(data => {
         if (!data.success) throw new Error('Server did not return JSON success');
         refreshCalendar(data, pushState);
+        if (onDone) onDone();
     })
     .catch(() => {
         window.location.href = `calendar.php?month=${month}&year=${year}`;
