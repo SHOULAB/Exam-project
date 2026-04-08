@@ -651,6 +651,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             'bwCancel'        => $_t['cal.bw.cancel']               ?? 'Atcelt',
             'bwConfirm'       => $_t['cal.bw.confirm']              ?? 'Jā, pievienot',
             'bwSubtitleFmt'   => $_t['cal.bw.subtitle.fmt']          ?? 'Šis izdevums pārsniegs %s',
+            'pickerToday'    => $_t['cal.picker.today']           ?? 'Today',
             'monthNames'      => $month_names_php,
         ]); ?>;
     </script>

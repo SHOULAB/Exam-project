@@ -185,6 +185,7 @@
     "cal.bw.cancel":               "Atcelt",
     "cal.bw.confirm":              "Jā, pievienot",
     "cal.bw.subtitle.fmt":          "Šis izdevums pārsniegs %s",
+    "cal.picker.today":             "Šodien",
 
     "~~~ index.php ~~~": "",
 
@@ -480,6 +481,7 @@
     "cal.bw.cancel":               "Cancel",
     "cal.bw.confirm":              "Yes, add",
     "cal.bw.subtitle.fmt":         "This expense will exceed %s",
+    "cal.picker.today":            "Today",
 
     "~~~ index.php ~~~": "",
 

@@ -814,6 +814,9 @@ function _cpRenderMonth() {
         cells += `<button type="button" class="${cls}" data-cp-month="${m}">${names[m - 1]}</button>`;
     }
 
+    const todayLabel = (typeof calendarStrings !== 'undefined' && calendarStrings.pickerToday)
+        ? calendarStrings.pickerToday : 'Today';
+
     dropdown.innerHTML = `
         <div class="cp-nav-row">
             <button type="button" class="cp-nav-btn" data-cp-action="year-step" data-cp-delta="-1">
@@ -824,7 +827,10 @@ function _cpRenderMonth() {
                 <i class="fa-solid fa-chevron-right"></i>
             </button>
         </div>
-        <div class="cp-month-grid">${cells}</div>`;
+        <div class="cp-month-grid">${cells}</div>
+        <div class="cp-footer">
+            <button type="button" class="cp-today-btn" data-cp-action="go-today">${todayLabel}</button>
+        </div>`;
 }
 
 function _cpRenderYear() {
@@ -882,6 +888,11 @@ function _cpHandleDropdownClick(e) {
         const m = parseInt(month, 10);
         _cpClose();
         loadCalendarMonth(m, _cpDisplayYear);
+    } else if (action === 'go-today') {
+        const tYear  = new Date().getFullYear();
+        const tMonth = new Date().getMonth() + 1;
+        _cpClose();
+        loadCalendarMonth(tMonth, tYear);
     }
 }
 

@@ -496,3 +496,29 @@ body:not(.light-mode) .cal-picker-dropdown {
     grid-template-columns: repeat(3, 1fr);
     gap: 8px;
 }
+
+/* ── Today footer button ─────────────────────────────────────────────────── */
+
+.cp-footer {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid var(--border);
+}
+
+.cp-today-btn {
+    width: 100%;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--primary);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 9px 0;
+    transition: background 0.2s ease, border-color 0.2s ease;
+}
+
+.cp-today-btn:hover {
+    background: rgba(20, 184, 166, 0.1);
+    border-color: var(--primary);
+}
