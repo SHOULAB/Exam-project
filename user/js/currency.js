@@ -52,7 +52,7 @@ function onCurrencyChange(callback) {
  * Falls back to EUR if not set
  */
 function getCurrentCurrency() {
-    return localStorage.getItem('budgetiva_currency') || 'EUR';
+    return localStorage.getItem('budgetar_currency') || 'EUR';
 }
 
 /**

@@ -3,7 +3,7 @@
 (function () {
     'use strict';
 
-    const LS_KEY = 'budgetiva_theme';
+    const LS_KEY = 'budgetar_theme';
 
     // ── Element refs ──────────────────────────────────────────────────────────
     const body       = document.body;
@@ -47,7 +47,7 @@
             const currency = document.getElementById('currencySelect');
             const newCurrency = currency ? currency.value : 'EUR';
             if (newCurrency) {
-                localStorage.setItem('budgetiva_currency', newCurrency);
+                localStorage.setItem('budgetar_currency', newCurrency);
                 // Notify other tabs/windows of currency change
                 if (typeof notifyCurrencyChange === 'function') {
                     notifyCurrencyChange(newCurrency);
@@ -92,7 +92,7 @@
         'KRW': 'Korejas Vona'
     };
 
-    const LS_KEY = 'budgetiva_currency';
+    const LS_KEY = 'budgetar_currency';
     const select = document.getElementById('currencySelect');
     const customSelect = document.getElementById('customCurrencySelect');
     const trigger = document.getElementById('customSelectValue');
@@ -326,7 +326,7 @@
 (function () {
     'use strict';
 
-    const LS_KEY = 'budgetiva_language';
+    const LS_KEY = 'budgetar_language';
     const langInput = document.getElementById('languageInput');
     const saved = localStorage.getItem(LS_KEY) || (langInput ? langInput.value : 'lv') || 'lv';
     if (langInput) langInput.value = saved;

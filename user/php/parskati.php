@@ -361,7 +361,7 @@ $ratio = $alltime['expense'] > 0 ? round($alltime['income'] / $alltime['expense'
 <script>
     // Initialize currency from PHP session
     if ('<?php echo $_SESSION['currency'] ?? 'EUR'; ?>') {
-        localStorage.setItem('budgetiva_currency', '<?php echo $_SESSION['currency'] ?? 'EUR'; ?>');
+        localStorage.setItem('budgetar_currency', '<?php echo $_SESSION['currency'] ?? 'EUR'; ?>');
     }
 </script>
 <script src="../js/script.js"></script>

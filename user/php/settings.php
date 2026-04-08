@@ -661,7 +661,7 @@ if ($stmt) {
     <script>
         // Initialize currency from PHP session
         if ('<?php echo $current_currency; ?>') {
-            localStorage.setItem('budgetiva_currency', '<?php echo $current_currency; ?>');
+            localStorage.setItem('budgetar_currency', '<?php echo $current_currency; ?>');
         }
     </script>
     <script src="../js/script.js"></script>

@@ -2,7 +2,7 @@
 
 https://kristovskis.lv/4pt/janeks/Exam-project/user/php/
 
-Budgetivia is a personal finance and budgeting project designed to help users track their income and expenses, understand their spending habits, and manage money more effectively through a simple and intuitive interface.
+Budgetar is a personal finance and budgeting project designed to help users track their income and expenses, understand their spending habits, and manage money more effectively through a simple and intuitive interface.
 
 ## Calendar Section (Kalendārs)
 - [x] Implement "Add Ienākums" button

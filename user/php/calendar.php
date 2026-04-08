@@ -650,7 +650,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
     <script>
         // Initialize currency from PHP session
         if ('<?php echo $_SESSION['currency'] ?? 'EUR'; ?>') {
-            localStorage.setItem('budgetiva_currency', '<?php echo $_SESSION['currency'] ?? 'EUR'; ?>');
+            localStorage.setItem('budgetar_currency', '<?php echo $_SESSION['currency'] ?? 'EUR'; ?>');
         }
     </script>
     <script src="../js/script.js"></script>

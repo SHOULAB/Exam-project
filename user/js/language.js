@@ -1,7 +1,7 @@
 (function () {
     'use strict';
 
-    var LS_KEY = 'budgetiva_language';
+    var LS_KEY = 'budgetar_language';
 
     function applyTranslations(T, lang) {
         var dict = T[lang] || T['lv'];
