@@ -345,14 +345,33 @@ if ($budgets_table_ready) {
     mysqli_stmt_execute($bstmt);
     $bres = mysqli_stmt_get_result($bstmt);
     while ($brow = mysqli_fetch_assoc($bres)) {
-        // Calculate how much has already been spent against this budget
-        $sstmt = mysqli_prepare($savienojums,
-            "SELECT COALESCE(SUM(amount), 0) AS spent
-             FROM   BU_transactions
-             WHERE  user_id = ? AND type = 'expense'
-               AND  date BETWEEN ? AND ?");
-        mysqli_stmt_bind_param($sstmt, "iss",
-            $user_id, $brow['start_date'], $brow['end_date']);
+        // Calculate how much has already been spent against this budget.
+        // For recurring budgets with specific weekdays, only count expenses
+        // that fall on those days so the threshold check is accurate.
+        $recurring_days_csv = $brow['recurring_days'] ?? '';
+        if ($recurring_days_csv !== '') {
+            // Convert JS day indices (0=Sun…6=Sat) to MySQL DAYOFWEEK values (1=Sun…7=Sat)
+            $js_days   = array_filter(array_map('intval', explode(',', $recurring_days_csv)), fn($d) => $d >= 0 && $d <= 6);
+            $mysql_days = array_values(array_map(fn($d) => $d + 1, $js_days)); // JS 0→1,…,6→7
+            $placeholders = implode(',', array_fill(0, count($mysql_days), '?'));
+            $sstmt = mysqli_prepare($savienojums,
+                "SELECT COALESCE(SUM(amount), 0) AS spent
+                 FROM   BU_transactions
+                 WHERE  user_id = ? AND type = 'expense'
+                   AND  date BETWEEN ? AND ?
+                   AND  DAYOFWEEK(date) IN ({$placeholders})");
+            $types = 'iss' . str_repeat('i', count($mysql_days));
+            $bind_args = array_merge([$user_id, $brow['start_date'], $brow['end_date']], $mysql_days);
+            mysqli_stmt_bind_param($sstmt, $types, ...$bind_args);
+        } else {
+            $sstmt = mysqli_prepare($savienojums,
+                "SELECT COALESCE(SUM(amount), 0) AS spent
+                 FROM   BU_transactions
+                 WHERE  user_id = ? AND type = 'expense'
+                   AND  date BETWEEN ? AND ?");
+            mysqli_stmt_bind_param($sstmt, "iss",
+                $user_id, $brow['start_date'], $brow['end_date']);
+        }
         mysqli_stmt_execute($sstmt);
         $srow  = mysqli_fetch_assoc(mysqli_stmt_get_result($sstmt));
         mysqli_stmt_close($sstmt);

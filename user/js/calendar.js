@@ -507,6 +507,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const newTotalExpense = monthlyExpense + expenseAmount;
             if (newTotalExpense > monthlyIncome) {
                 e.preventDefault();
+                closeTransactionModal();
                 showWarningModal(expenseAmount, newTotalExpense);
                 return;
             }
@@ -515,6 +516,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const breachedBudgets = getBudgetBreaches(expenseDate, expenseAmount);
             if (breachedBudgets.length > 0) {
                 e.preventDefault();
+                closeTransactionModal();
                 showBudgetWarningModal(expenseAmount, expenseDate, breachedBudgets);
             }
         });
@@ -525,12 +527,21 @@ document.addEventListener('DOMContentLoaded', function() {
  * Returns an array of budget objects that would be breached by adding
  * `amount` as an expense on `dateStr` (YYYY-MM-DD).
  * Only budgets whose date range covers `dateStr` are considered.
+ * For recurring budgets with specific weekdays, only those days are in scope.
  */
 function getBudgetBreaches(dateStr, amount) {
     if (!activeBudgets || activeBudgets.length === 0) return [];
 
     return activeBudgets.filter(b => {
         if (dateStr < b.start_date || dateStr > b.end_date) return false;
+
+        // Recurring budgets only apply on their configured days of the week.
+        if (b.recurring_days && b.recurring_days !== '') {
+            const allowedDays  = b.recurring_days.split(',').map(Number);
+            const expenseDow   = new Date(dateStr + 'T00:00:00').getDay(); // 0=Sun … 6=Sat
+            if (!allowedDays.includes(expenseDow)) return false;
+        }
+
         return (b.spent + amount) > b.budget_amount;
     });
 }
@@ -631,11 +642,37 @@ function closeBudgetWarningModal() {
 function confirmBudgetExpense() {
     closeBudgetWarningModal();
     const form = document.getElementById('transactionForm');
-    if (form) {
-        const newForm = form.cloneNode(true);
-        form.parentNode.replaceChild(newForm, form);
-        newForm.submit();
-    }
+    if (!form) return;
+
+    const savedDay = window._dayModalOpenDay;
+    const formData = new FormData(form);
+    formData.append('ajax', 1);
+
+    fetch('calendar.php', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'same-origin',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Failed to submit transaction');
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            closeTransactionModal();
+            loadCalendarMonth(currentMonth, currentYear, false, function() {
+                if (savedDay) openDayModal(savedDay, currentMonth, currentYear);
+            });
+        } else {
+            form.dataset.skipAjax = '1';
+            form.submit();
+        }
+    })
+    .catch(() => {
+        form.dataset.skipAjax = '1';
+        form.submit();
+    });
 }
 
 /** Simple HTML escape helper */
@@ -718,11 +755,36 @@ function closeWarningModal() {
 function confirmExpense() {
     closeWarningModal();
     const form = document.getElementById('transactionForm');
-    if (form) {
-        const newForm = form.cloneNode(true);
-        form.parentNode.replaceChild(newForm, form);
-        newForm.submit();
-    }
+    if (!form) return;
+
+    const savedDay = window._dayModalOpenDay;
+    const formData = new FormData(form);
+    formData.append('ajax', 1);
+
+    fetch('calendar.php', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'same-origin',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Failed to submit transaction');
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            loadCalendarMonth(currentMonth, currentYear, false, function() {
+                if (savedDay) openDayModal(savedDay, currentMonth, currentYear);
+            });
+        } else {
+            form.dataset.skipAjax = '1';
+            form.submit();
+        }
+    })
+    .catch(() => {
+        form.dataset.skipAjax = '1';
+        form.submit();
+    });
 }
 
 
