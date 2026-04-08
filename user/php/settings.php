@@ -355,6 +355,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_settings']) && !
 $current_theme = $_SESSION['theme'] ?? 'dark';
 $current_currency = $_SESSION['currency'] ?? 'EUR';
 $current_language = $_SESSION['language'] ?? 'lv';
+$_langIsDefault   = true;
 
 // Try to pull from DB (in case session is stale)
 $stmt = mysqli_prepare($savienojums,
@@ -373,6 +374,7 @@ if ($stmt) {
         } elseif ($row['setting_key'] === 'language') {
             $current_language = $row['setting_value'];
             $_SESSION['language'] = $current_language;
+            $_langIsDefault = false;
         }
     }
     mysqli_stmt_close($stmt);
@@ -663,9 +665,12 @@ if ($stmt) {
         if ('<?php echo $current_currency; ?>') {
             localStorage.setItem('budgetar_currency', '<?php echo $current_currency; ?>');
         }
+        // Sync theme from server — overrides any stale localStorage value from a
+        // previous user or session so new accounts always start in dark mode.
+        localStorage.setItem('budgetar_theme', '<?php echo $current_theme; ?>');
     </script>
     <script src="../js/script.js"></script>
-    <script>window._i18nData=<?php echo json_encode($_traw_settings); ?>;window._i18nLang=<?php echo json_encode($current_language); ?>;</script>
+    <script>window._i18nData=<?php echo json_encode($_traw_settings); ?>;window._i18nLang=<?php echo json_encode($current_language); ?>;window._i18nIsDefault=<?php echo $_langIsDefault ? 'true' : 'false'; ?>;</script>
     <script src="../js/language.js"></script>
     <script src="../js/settings.js"></script>
 </body>

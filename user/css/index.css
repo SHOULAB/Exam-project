@@ -27,7 +27,6 @@
     position: absolute;
     top: 0;
     left: 0;
-    width: 100%;
     opacity: 0;
     transform: translateX(-30px);
     transition: opacity 0.8s ease-in-out, transform 0.8s ease-in-out;

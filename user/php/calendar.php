@@ -46,6 +46,7 @@ $currSymbol = $currencySymbols[$_SESSION['currency']] ?? '<i class="fa-solid fa-
 
 // ── Load language + translations ──────────────────────────────────────────────
 $_SESSION['language'] = $_SESSION['language'] ?? 'lv';
+$_langIsDefault = true;
 $stmt_lang = mysqli_prepare($savienojums,
     "SELECT setting_value FROM BU_user_settings WHERE user_id = ? AND setting_key = 'language'");
 if ($stmt_lang) {
@@ -54,6 +55,7 @@ if ($stmt_lang) {
     $res_lang = mysqli_stmt_get_result($stmt_lang);
     if ($row_lang = mysqli_fetch_assoc($res_lang)) {
         $_SESSION['language'] = $row_lang['setting_value'];
+        $_langIsDefault = false;
     }
     mysqli_stmt_close($stmt_lang);
 }
@@ -654,7 +656,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
         }
     </script>
     <script src="../js/script.js"></script>
-    <script>window._i18nData=<?php echo json_encode($_traw); ?>;window._i18nLang=<?php echo json_encode($_lang); ?>;</script>
+    <script>window._i18nData=<?php echo json_encode($_traw); ?>;window._i18nLang=<?php echo json_encode($_lang); ?>;window._i18nIsDefault=<?php echo $_langIsDefault ? 'true' : 'false'; ?>;</script>
     <script src="../js/language.js"></script>
     <script src="../js/calendar.js"></script>
 </body>

@@ -2,6 +2,7 @@
     'use strict';
 
     var LS_KEY = 'budgetar_language';
+    var SUPPORTED = ['lv', 'en'];
 
     function applyTranslations(T, lang) {
         var dict = T[lang] || T['lv'];
@@ -9,14 +10,33 @@
             var key = el.getAttribute('data-i18n');
             if (dict[key] !== undefined) el.textContent = dict[key];
         });
+        document.querySelectorAll('[data-i18n-placeholder]').forEach(function (el) {
+            var key = el.getAttribute('data-i18n-placeholder');
+            if (dict[key] !== undefined) el.placeholder = dict[key];
+        });
         document.querySelectorAll('.lang-btn').forEach(function (btn) {
             btn.classList.toggle('active', btn.dataset.lang === lang);
         });
     }
 
-    // Prefer localStorage so the latest user selection always wins,
-    // fall back to the PHP-session value inlined by the page.
-    var lang = localStorage.getItem(LS_KEY) || (window._i18nLang || 'lv');
+    function detectLanguage() {
+        var browserLang = (navigator.language || navigator.userLanguage || 'lv').slice(0, 2).toLowerCase();
+        return SUPPORTED.indexOf(browserLang) !== -1 ? browserLang : 'lv';
+    }
+
+    var stored = localStorage.getItem(LS_KEY);
+    var lang;
+    if (stored) {
+        // User has visited before — always honour their stored choice.
+        lang = stored;
+    } else if (window._i18nIsDefault === false) {
+        // Logged-in user with a saved DB preference — use it.
+        lang = window._i18nLang || 'lv';
+    } else {
+        // New / guest user with no saved preference — detect from browser.
+        lang = detectLanguage();
+        localStorage.setItem(LS_KEY, lang);
+    }
 
     if (window._i18nData) {
         // Translation data was inlined by PHP — apply synchronously, no flash.

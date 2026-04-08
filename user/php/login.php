@@ -11,6 +11,16 @@ if (isset($_SESSION['user_id'])) {
 // Include database connection
 require_once('../../assets/database.php');
 
+// ─── Language detection ───────────────────────────────────────────────────────
+$_supported   = ['lv', 'en'];
+$_browserLang = 'lv';
+if (!empty($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
+    $code = strtolower(substr(trim($_SERVER['HTTP_ACCEPT_LANGUAGE']), 0, 2));
+    if (in_array($code, $_supported)) $_browserLang = $code;
+}
+$_traw = json_decode(file_get_contents(__DIR__ . '/translate.json'), true) ?? [];
+$_t    = $_traw[$_browserLang] ?? $_traw['lv'];
+
 $error = '';
 
 // ─── Auto-login from remember me cookie ──────────────────────────────────────
@@ -68,13 +78,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $remember_me = isset($_POST['remember']);
 
     if (empty($email) || empty($password)) {
-        $error = 'Lūdzu aizpildiet visus laukus!';
+        $error = $_t['login.err.empty'] ?? 'Lūdzu aizpildiet visus laukus!';
     } else {
         $stmt = mysqli_prepare($savienojums,
             "SELECT id, username, email, password FROM BU_users WHERE email = ?");
 
         if ($stmt === false) {
-            $error = 'Sistēmas kļūda. Lūdzu mēģiniet vēlāk.';
+            $error = $_t['login.err.system'] ?? 'Sistēmas kļūda. Lūdzu mēģinājiet vēlāk.';
         } else {
             mysqli_stmt_bind_param($stmt, "s", $email);
             mysqli_stmt_execute($stmt);
@@ -143,10 +153,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     header('Location: calendar.php');
                     exit();
                 } else {
-                    $error = 'Nepareizs e-pasts vai parole!';
+                    $error = $_t['login.err.invalid'] ?? 'Nepareizs e-pasts vai parole!';
                 }
             } else {
-                $error = 'Nepareizs e-pasts vai parole!';
+                $error = $_t['login.err.invalid'] ?? 'Nepareizs e-pasts vai parole!';
             }
             mysqli_stmt_close($stmt);
         }
@@ -158,7 +168,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ieiet - Budgetar</title>
+    <title data-i18n="login.page.title">Ieiet - Budgetar</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="icon" href="../../assets/image/logo.png" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
@@ -167,9 +177,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="auth-container">
         <div class="auth-card">
             <div class="auth-header">
-                <a href="index.php" class="back-link">← Atpakaļ</a>
-                <h1 class="auth-title">Laipni lūdzam atpakaļ!</h1>
-                <p class="auth-subtitle">Ielogojieties, lai turpinātu</p>
+                <a href="index.php" class="back-link" data-i18n="login.back">← Atpakaļ</a>
+                <h1 class="auth-title" data-i18n="login.title">Laipni lūdzam atpakaļ!</h1>
+                <p class="auth-subtitle" data-i18n="login.subtitle">Ielogojieties, lai turpinātu</p>
             </div>
 
             <?php if ($error): ?>
@@ -180,20 +190,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             <form class="auth-form" id="loginForm" method="POST" action="">
                 <div class="form-group">
-                    <label for="email" class="form-label">E-pasts</label>
+                    <label for="email" class="form-label" data-i18n="login.email.label">E-pasts</label>
                     <input
                         type="email"
                         id="email"
                         name="email"
                         class="form-input"
                         placeholder="tavs@epasts.lv"
+                        data-i18n-placeholder="login.email.placeholder"
                         required
                         value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>"
                     >
                 </div>
 
                 <div class="form-group">
-                    <label for="password" class="form-label">Parole</label>
+                    <label for="password" class="form-label" data-i18n="login.password.label">Parole</label>
                     <div class="password-input-wrapper">
                         <input
                             type="password"
@@ -212,46 +223,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="form-options">
                     <label class="checkbox-label">
                         <input type="checkbox" name="remember" id="remember" class="checkbox-input">
-                        <span>Atcerēties mani</span>
+                        <span data-i18n="login.remember">Atcerēties mani</span>
                     </label>
-                    <a href="forgot_password.php" class="link">Aizmirsi paroli?</a>
+                    <a href="forgot_password.php" class="link" data-i18n="login.forgot">Aizmirsi paroli?</a>
                 </div>
 
-                <button type="submit" class="btn btn-primary btn-full">
+                <button type="submit" class="btn btn-primary btn-full" data-i18n="login.btn">
                     Ieiet
                 </button>
             </form>
 
             <div class="auth-footer">
-                <p>Nav konta? <a href="register.php" class="link">Reģistrēties</a></p>
+                <p><span data-i18n="login.no.account">Nav konta?</span> <a href="register.php" class="link" data-i18n="login.register.link">Reģistrēties</a></p>
             </div>
         </div>
 
         <div class="auth-visual">
             <div class="visual-content">
-                <h2 class="visual-title">Tavi finanšu mērķi gaida tevi</h2>
+                <h2 class="visual-title" data-i18n="login.visual.title">Tavi finanšu mērķi gaida tevi</h2>
                 <div class="visual-features">
                     <div class="visual-feature">
                         <span class="visual-icon"><i class="fa-solid fa-chart-simple"></i></span>
-                        <span>Detalizēti ienākumu un izdevumu pārskati</span>
+                        <span data-i18n="login.visual.feat1">Detalizēti ienākumu un izdevumu pārskati</span>
                     </div>
                     <div class="visual-feature">
                         <span class="visual-icon"><i class="fa-solid fa-calendar"></i></span>
-                        <span>Kalendāra skats visām transakcijām</span>
+                        <span data-i18n="login.visual.feat2">Kalendāra skats visām transakcijām</span>
                     </div>
                     <div class="visual-feature">
                         <span class="visual-icon"><i class="fa-solid fa-sack-dollar"></i></span>
-                        <span>Izseko savu budžetu reāllaikā</span>
+                        <span data-i18n="login.visual.feat3">Izseko savu budžetu reāllaikā</span>
                     </div>
                     <div class="visual-feature">
                         <span class="visual-icon"><i class="fa-solid fa-bullseye"></i></span>
-                        <span>Sasniedz savus finanšu mērķus</span>
+                        <span data-i18n="login.visual.feat4">Sasniedz savus finanšu mērķus</span>
                     </div>
                 </div>
             </div>
         </div>
     </div>
 
+    <script>window._i18nData=<?php echo json_encode($_traw); ?>;window._i18nIsDefault=true;</script>
+    <script src="../js/language.js"></script>
     <script src="../js/script.js"></script>
 </body>
 </html>
