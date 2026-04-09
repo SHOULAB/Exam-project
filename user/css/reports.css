@@ -2,14 +2,14 @@
 
 .reports-main {
     margin-left: 280px;
-    padding: 30px;
+    padding: 40px;
     min-height: 100vh;
     width: calc(100% - 280px);
     box-sizing: border-box;
 }
 
-.reports-header    { margin-bottom: 30px; }
-.reports-title     { font-size: 28px; font-weight: 700; color: var(--text-primary); }
+.reports-header    { margin-bottom: 40px; }
+.reports-title     { font-size: 32px; font-weight: 700; color: var(--text-primary); }
 .reports-subtitle  { color: var(--text-secondary); margin-top: 6px; font-size: 15px; }
 
 /* ── Summary stat cards ──────────────────────────────────────────────────── */

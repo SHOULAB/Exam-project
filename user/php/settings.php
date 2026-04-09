@@ -13,6 +13,101 @@ $current_email = '';
 $success_message = '';
 $error_message   = '';
 
+// ── AJAX: Change username or email (password-verified) ────────────────────────
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['change_field'])) {
+    header('Content-Type: application/json');
+
+    $field       = $_POST['field']            ?? '';
+    $password    = trim($_POST['verify_password'] ?? '');
+    $new_value   = trim($_POST['new_value']   ?? '');
+    $verify_only = !empty($_POST['verify_only']);
+
+    if (!in_array($field, ['username', 'email'], true)) {
+        echo json_encode(['success' => false, 'error' => 'invalid_field']);
+        exit();
+    }
+    if ($password === '') {
+        echo json_encode(['success' => false, 'error' => 'empty_fields']);
+        exit();
+    }
+    if (!$verify_only && $new_value === '') {
+        echo json_encode(['success' => false, 'error' => 'empty_fields']);
+        exit();
+    }
+
+    // Verify password
+    $stmt = mysqli_prepare($savienojums, "SELECT password FROM BU_users WHERE id = ?");
+    if ($stmt) {
+        mysqli_stmt_bind_param($stmt, "i", $user_id);
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_bind_result($stmt, $hash);
+        mysqli_stmt_fetch($stmt);
+        mysqli_stmt_close($stmt);
+    }
+    if (empty($hash) || !password_verify($password, $hash)) {
+        echo json_encode(['success' => false, 'error' => 'wrong_password']);
+        exit();
+    }
+
+    // Password-only check — do not update anything
+    if ($verify_only) {
+        echo json_encode(['success' => true, 'verified' => true]);
+        exit();
+    }
+
+    if ($field === 'username') {
+        if (strlen($new_value) < 4) {
+            echo json_encode(['success' => false, 'error' => 'username_short']);
+            exit();
+        }
+        $stmt = mysqli_prepare($savienojums, "SELECT id FROM BU_users WHERE username = ? AND id != ?");
+        if ($stmt) {
+            mysqli_stmt_bind_param($stmt, "si", $new_value, $user_id);
+            mysqli_stmt_execute($stmt);
+            mysqli_stmt_store_result($stmt);
+            $taken = mysqli_stmt_num_rows($stmt) > 0;
+            mysqli_stmt_close($stmt);
+        }
+        if ($taken) {
+            echo json_encode(['success' => false, 'error' => 'username_taken']);
+            exit();
+        }
+        $stmt = mysqli_prepare($savienojums, "UPDATE BU_users SET username = ? WHERE id = ?");
+        if ($stmt) {
+            mysqli_stmt_bind_param($stmt, "si", $new_value, $user_id);
+            mysqli_stmt_execute($stmt);
+            mysqli_stmt_close($stmt);
+        }
+        $_SESSION['username'] = $new_value;
+    } else {
+        if (!filter_var($new_value, FILTER_VALIDATE_EMAIL)) {
+            echo json_encode(['success' => false, 'error' => 'invalid_email']);
+            exit();
+        }
+        $stmt = mysqli_prepare($savienojums, "SELECT id FROM BU_users WHERE email = ? AND id != ?");
+        if ($stmt) {
+            mysqli_stmt_bind_param($stmt, "si", $new_value, $user_id);
+            mysqli_stmt_execute($stmt);
+            mysqli_stmt_store_result($stmt);
+            $taken = mysqli_stmt_num_rows($stmt) > 0;
+            mysqli_stmt_close($stmt);
+        }
+        if ($taken) {
+            echo json_encode(['success' => false, 'error' => 'email_taken']);
+            exit();
+        }
+        $stmt = mysqli_prepare($savienojums, "UPDATE BU_users SET email = ? WHERE id = ?");
+        if ($stmt) {
+            mysqli_stmt_bind_param($stmt, "si", $new_value, $user_id);
+            mysqli_stmt_execute($stmt);
+            mysqli_stmt_close($stmt);
+        }
+    }
+
+    echo json_encode(['success' => true, 'new_value' => htmlspecialchars($new_value)]);
+    exit();
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_account'])) {
     $delete_password = trim($_POST['delete_password'] ?? '');
 
@@ -137,7 +232,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['reset_account'])) {
             mysqli_stmt_close($stmt);
         }
 
-        $success_message = 'Jūsu konta dati ir atiestatīti. Varat sākt no jauna.';
+        $success_message = 'settings.reset';
     }
 }
 
@@ -150,106 +245,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_settings']) && !
                 : 'EUR';
 
     $success = true;
-
-    // Save username
-    if (isset($_POST['username'])) {
-        $new_username = trim($_POST['username']);
-
-        if ($new_username === '') {
-            $success = false;
-            $error_message = 'Lietotājvārds nevar būt tukšs.';
-        } elseif (strlen($new_username) < 4) {
-            $success = false;
-            $error_message = 'Lietotājvārdam jābūt vismaz 4 simbolus garam.';
-        } elseif ($new_username !== $username) {
-            $stmt = mysqli_prepare($savienojums, "SELECT id FROM BU_users WHERE username = ? AND id != ?");
-            if ($stmt) {
-                mysqli_stmt_bind_param($stmt, "si", $new_username, $user_id);
-                mysqli_stmt_execute($stmt);
-                mysqli_stmt_store_result($stmt);
-
-                if (mysqli_stmt_num_rows($stmt) > 0) {
-                    $success = false;
-                    $error_message = 'Šāds lietotājvārds jau ir aizņemts.';
-                }
-                mysqli_stmt_close($stmt);
-            }
-
-            if ($success) {
-                $stmt = mysqli_prepare($savienojums, "UPDATE BU_users SET username = ? WHERE id = ?");
-                if ($stmt) {
-                    mysqli_stmt_bind_param($stmt, "si", $new_username, $user_id);
-                    if (mysqli_stmt_execute($stmt)) {
-                        $_SESSION['username'] = $new_username;
-                        $username = $new_username;
-                    } else {
-                        $success = false;
-                        $error_message = 'Kļūda atjauninot lietotājvārdu. Lūdzu mēģiniet vēlāk.';
-                    }
-                    mysqli_stmt_close($stmt);
-                } else {
-                    $success = false;
-                    $error_message = 'Kļūda atjauninot lietotājvārdu. Lūdzu mēģiniet vēlāk.';
-                }
-            }
-        }
-    }
-
-    // Save email
-    if (isset($_POST['email'])) {
-        $new_email = trim($_POST['email']);
-
-        if ($new_email === '') {
-            $success = false;
-            $error_message = 'E-pasts nevar būt tukšs.';
-        } elseif (!filter_var($new_email, FILTER_VALIDATE_EMAIL)) {
-            $success = false;
-            $error_message = 'Lūdzu ievadiet derīgu e-pasta adresi.';
-        } else {
-            // Load current email if not already loaded
-            if ($current_email === '') {
-                $stmt_email = mysqli_prepare($savienojums, "SELECT email FROM BU_users WHERE id = ?");
-                if ($stmt_email) {
-                    mysqli_stmt_bind_param($stmt_email, "i", $user_id);
-                    mysqli_stmt_execute($stmt_email);
-                    mysqli_stmt_bind_result($stmt_email, $current_email);
-                    mysqli_stmt_fetch($stmt_email);
-                    mysqli_stmt_close($stmt_email);
-                }
-            }
-
-            if ($success && $new_email !== $current_email) {
-                $stmt = mysqli_prepare($savienojums, "SELECT id FROM BU_users WHERE email = ? AND id != ?");
-                if ($stmt) {
-                    mysqli_stmt_bind_param($stmt, "si", $new_email, $user_id);
-                    mysqli_stmt_execute($stmt);
-                    mysqli_stmt_store_result($stmt);
-                    if (mysqli_stmt_num_rows($stmt) > 0) {
-                        $success = false;
-                        $error_message = 'Šī e-pasta adrese jau ir aizņemta.';
-                    }
-                    mysqli_stmt_close($stmt);
-                }
-
-                if ($success) {
-                    $stmt = mysqli_prepare($savienojums, "UPDATE BU_users SET email = ? WHERE id = ?");
-                    if ($stmt) {
-                        mysqli_stmt_bind_param($stmt, "si", $new_email, $user_id);
-                        if (mysqli_stmt_execute($stmt)) {
-                            $current_email = $new_email;
-                        } else {
-                            $success = false;
-                            $error_message = 'Kļūda atjauninot e-pastu. Lūdzu mēģiniet vēlāk.';
-                        }
-                        mysqli_stmt_close($stmt);
-                    } else {
-                        $success = false;
-                        $error_message = 'Kļūda atjauninot e-pastu. Lūdzu mēģiniet vēlāk.';
-                    }
-                }
-            }
-        }
-    }
 
     // Save password
     $password_current = trim($_POST['password_current'] ?? '');
@@ -345,7 +340,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_settings']) && !
     }
 
     if ($success) {
-        $success_message = 'Iestatījumi saglabāti veiksmīgi!';
+        $success_message = 'settings.saved';
     } elseif ($error_message === '') {
         $error_message = 'Kļūda saglabājot iestatījumus.';
     }
@@ -417,7 +412,7 @@ if ($stmt) {
             <?php if ($success_message): ?>
                 <div class="alert alert-success">
                     <i class="fa-solid fa-circle-check"></i>
-                    <?php echo htmlspecialchars($success_message); ?>
+                    <span data-i18n="<?php echo htmlspecialchars($success_message); ?>"><?php echo htmlspecialchars($success_message); ?></span>
                 </div>
             <?php endif; ?>
             <?php if ($error_message): ?>
@@ -570,51 +565,80 @@ if ($stmt) {
                         </div>
 
                         <div class="settings-card">
+                            <!-- Username ──────────────────────────────────────────── -->
                             <div class="settings-row">
                                 <div class="settings-row-info">
                                     <span class="settings-row-label" data-i18n="username.label">Lietotājvārds</span>
                                     <span class="settings-row-desc" data-i18n="username.desc">Lietotājvārds jābūt unikālam un vismāz 4 simbolus garam.</span>
                                 </div>
-                                <div class="settings-row-field">
-                                    <input type="text" name="username" id="accountUsername" class="form-input" value="<?php echo htmlspecialchars($username); ?>" required minlength="4" placeholder="Lietotājvārds">
+                                <div class="settings-row-field settings-row-field--locked">
+                                    <button type="button" class="btn btn-change-field" data-field="username" data-i18n="btn.change">Mainīt</button>
+                                    <span class="settings-field-value" id="displayUsername"><?php echo htmlspecialchars($username); ?></span>
                                 </div>
                             </div>
                             <div class="settings-divider"></div>
+                            <!-- Email ─────────────────────────────────────────────── -->
                             <div class="settings-row">
                                 <div class="settings-row-info">
                                     <span class="settings-row-label" data-i18n="email.label">E-pasts</span>
                                     <span class="settings-row-desc" data-i18n="email.desc">Jūsu konta e-pasta adrese. Tā tiek izmantota pieteiķanās un saziņai.</span>
                                 </div>
-                                <div class="settings-row-field">
-                                    <input type="email" name="email" id="accountEmail" class="form-input" value="<?php echo htmlspecialchars($current_email); ?>" required placeholder="E-pasts">
+                                <div class="settings-row-field settings-row-field--locked">
+                                    <button type="button" class="btn btn-change-field" data-field="email" data-i18n="btn.change">Mainīt</button>
+                                    <span class="settings-field-value" id="displayEmail"><?php echo htmlspecialchars($current_email); ?></span>
                                 </div>
                             </div>
                             <div class="settings-divider"></div>
-                            <div class="settings-row">
+                            <!-- Password collapsed row -->
+                            <div class="settings-row" id="passwordCollapsedRow">
                                 <div class="settings-row-info">
-                                    <span class="settings-row-label" data-i18n="password.current.label">Pašreizējā parole</span>
-                                    <span class="settings-row-desc" data-i18n="password.current.desc">Ievadiet pašreizējo paroli, lai varētu to mainīt.</span>
+                                    <span class="settings-row-label" data-i18n="password.label">Parole</span>
+                                    <span class="settings-row-desc" data-i18n="password.desc">Mainiet sava konta paroli.</span>
                                 </div>
-                                <div class="settings-row-field">
-                                    <input type="password" name="password_current" id="passwordCurrent" class="form-input" placeholder="Pašreizējā parole">
+                                <div class="settings-row-field settings-row-field--locked">
+                                    <button type="button" class="btn btn-change-field" id="expandPasswordBtn" data-i18n="btn.change" data-field="password">Mainīt</button>
+                                    <span class="settings-field-value">••••••••</span>
                                 </div>
                             </div>
-                            <div class="settings-row">
-                                <div class="settings-row-info">
-                                    <span class="settings-row-label" data-i18n="password.new.label">Jaunā parole</span>
-                                    <span class="settings-row-desc" data-i18n="password.new.desc">Parolei jābūt vismāz 8 simbolus garai.</span>
+                            <!-- Password expanded rows -->
+                            <div id="passwordExpandedRows" style="display:none;">
+                                <div class="settings-divider"></div>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <span class="settings-row-label" data-i18n="password.current.label">Pašreizējā parole</span>
+                                        <span class="settings-row-desc" data-i18n="password.current.desc">Ievadiet pašreizējo paroli, lai varētu to mainīt.</span>
+                                    </div>
+                                    <div class="settings-row-field">
+                                        <input type="password" name="password_current" id="passwordCurrent" class="form-input" placeholder="Pašreizējā parole" data-i18n-placeholder="password.current.placeholder">
+                                    </div>
                                 </div>
-                                <div class="settings-row-field">
-                                    <input type="password" name="password_new" id="passwordNew" class="form-input" placeholder="Jaunā parole">
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <span class="settings-row-label" data-i18n="password.new.label">Jaunā parole</span>
+                                        <span class="settings-row-desc" data-i18n="password.new.desc">Parolei jābūt vismāz 8 simbolus garai.</span>
+                                    </div>
+                                    <div class="settings-row-field">
+                                        <input type="password" name="password_new" id="passwordNew" class="form-input" placeholder="Jaunā parole" data-i18n-placeholder="password.new.placeholder">
+                                    </div>
                                 </div>
-                            </div>
-                            <div class="settings-row">
-                                <div class="settings-row-info">
-                                    <span class="settings-row-label" data-i18n="password.confirm.label">Apstipriniet paroli</span>
-                                    <span class="settings-row-desc" data-i18n="password.confirm.desc">Ievadiet jauno paroli vēlreiz, lai apstiprinātu.</span>
+                                <div class="settings-row">
+                                    <div class="settings-row-info">
+                                        <span class="settings-row-label" data-i18n="password.confirm.label">Apstipriniet paroli</span>
+                                        <span class="settings-row-desc" data-i18n="password.confirm.desc">Ievadiet jauno paroli vēlreiz, lai apstiprinātu.</span>
+                                    </div>
+                                    <div class="settings-row-field">
+                                        <input type="password" name="password_confirm" id="passwordConfirm" class="form-input" placeholder="Apstipriniet paroli" data-i18n-placeholder="password.confirm.placeholder">
+                                    </div>
                                 </div>
-                                <div class="settings-row-field">
-                                    <input type="password" name="password_confirm" id="passwordConfirm" class="form-input" placeholder="Apstipriniet paroli">
+                                <div class="settings-row" style="padding-top:4px;padding-bottom:20px;">
+                                    <div style="flex:1;"></div>
+                                    <div class="settings-row-field" style="display:flex;gap:10px;justify-content:flex-end;">
+                                        <button type="submit" class="btn btn-primary">
+                                            <i class="fa-solid fa-floppy-disk"></i>
+                                            <span data-i18n="change.modal.save">Saglabāt</span>
+                                        </button>
+                                        <button type="button" class="btn btn-secondary" id="collapsePasswordBtn" data-i18n="cal.delete.cancel">Atcelt</button>
+                                    </div>
                                 </div>
                             </div>
                             <div class="settings-divider"></div>
@@ -646,7 +670,7 @@ if ($stmt) {
                         </div>
                     </section>
 
-                    <div class="settings-actions">
+                    <div class="settings-actions" style="display:none;">
                         <button type="submit" class="btn btn-primary">
                             <i class="fa-solid fa-floppy-disk"></i>
                             <span data-i18n="btn.save">Saglabāt izmaiņas</span>
@@ -657,7 +681,57 @@ if ($stmt) {
         </main>
     </div>
 
+    <!-- ── Unsaved changes bar ───────────────────────────────────────────── -->
+    <div id="unsavedBar" class="unsaved-bar" aria-live="polite">
+        <span class="unsaved-bar-text" data-i18n="unsaved.warning">Uzmanību — jums ir nesaglabātas izmaiņas!</span>
+        <div class="unsaved-bar-actions">
+            <button type="button" id="unsavedResetBtn" class="unsaved-bar-reset" data-i18n="unsaved.reset">Atiestatīt</button>
+            <button type="button" id="unsavedSaveBtn" class="btn btn-primary unsaved-bar-save" data-i18n="unsaved.save">Saglabāt izmaiņas</button>
+        </div>
+    </div>
+
     <?php include __DIR__ . '/mobile_nav.php'; ?>
+
+    <!-- ── Change field modal ─────────────────────────────────────────────── -->
+    <div id="changeFieldModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="changeFieldTitle">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="modal-title" id="changeFieldTitle" data-i18n="change.modal.title">Mainīt</h2>
+                <button type="button" class="modal-close" id="changeFieldClose" aria-label="Aizvērt">✕</button>
+            </div>
+
+            <!-- Step 1: verify password -->
+            <div id="cfStep1">
+                <div class="modal-body">
+                    <p class="cf-hint" data-i18n="change.modal.password.hint">Ievadiet pašreizējo paroli, lai turpinātu.</p>
+                    <input type="password" id="cfPassword" class="form-input" autocomplete="current-password"
+                           data-i18n-placeholder="password.current.placeholder" placeholder="Pašreizējā parole">
+                    <p class="cf-error" id="cfStep1Error" style="display:none;"></p>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cfCancelBtn" data-i18n="cal.delete.cancel">Atcelt</button>
+                    <button type="button" class="btn btn-primary" id="cfVerifyBtn">
+                        <span data-i18n="change.modal.verify">Turpināt</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Step 2: enter new value -->
+            <div id="cfStep2" style="display:none;">
+                <div class="modal-body">
+                    <p class="cf-hint" id="cfStep2Hint"></p>
+                    <input type="text" id="cfNewValue" class="form-input" autocomplete="off">
+                    <p class="cf-error" id="cfStep2Error" style="display:none;"></p>
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-secondary" id="cfBackBtn" data-i18n="change.modal.back">Atpakaļ</button>
+                    <button type="button" class="btn btn-primary" id="cfSaveBtn">
+                        <span data-i18n="change.modal.save">Saglabāt</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script src="../js/currency.js"></script>
     <script>
@@ -673,5 +747,313 @@ if ($stmt) {
     <script>window._i18nData=<?php echo json_encode($_traw_settings); ?>;window._i18nLang=<?php echo json_encode($current_language); ?>;window._i18nIsDefault=<?php echo $_langIsDefault ? 'true' : 'false'; ?>;</script>
     <script src="../js/language.js"></script>
     <script src="../js/settings.js"></script>
+    <script>
+    // ── Password expand/collapse ──────────────────────────────────────────────
+    (function () {
+        var expandBtn   = document.getElementById('expandPasswordBtn');
+        var collapseBtn = document.getElementById('collapsePasswordBtn');
+        var collapsed   = document.getElementById('passwordCollapsedRow');
+        var expanded    = document.getElementById('passwordExpandedRows');
+
+        if (!expandBtn) return;
+
+        expandBtn.addEventListener('click', function () {
+            collapsed.style.display = 'none';
+            expanded.style.display  = '';
+            var first = document.getElementById('passwordCurrent');
+            if (first) setTimeout(function () { first.focus(); }, 40);
+        });
+
+        collapseBtn.addEventListener('click', function () {
+            expanded.style.display  = 'none';
+            collapsed.style.display = '';
+            document.getElementById('passwordCurrent').value = '';
+            document.getElementById('passwordNew').value     = '';
+            document.getElementById('passwordConfirm').value = '';
+        });
+    })();
+
+    // ── Unsaved changes bar ───────────────────────────────────────────────────
+    (function () {
+        'use strict';
+
+        var form       = document.getElementById('settingsForm');
+        var bar        = document.getElementById('unsavedBar');
+        var resetBtn   = document.getElementById('unsavedResetBtn');
+        var saveBtn    = document.getElementById('unsavedSaveBtn');
+
+        if (!form || !bar) return;
+
+        // Snapshot initial values
+        function snapshot() {
+            var map = {};
+            Array.from(form.elements).forEach(function (el) {
+                if (!el.name) return;
+                if (el.type === 'radio') { if (el.checked) map[el.name] = el.value; }
+                else if (el.type === 'checkbox') { map[el.name] = el.checked; }
+                else { map[el.name] = el.value; }
+            });
+            return map;
+        }
+
+        var original = snapshot();
+        var dirty    = false;
+
+        function isDirty() {
+            var current = snapshot();
+            for (var k in original) {
+                if (original[k] !== current[k]) return true;
+            }
+            return false;
+        }
+
+        function setBar(show) {
+            dirty = show;
+            if (show) bar.classList.add('visible');
+            else      bar.classList.remove('visible');
+        }
+
+        function checkDirty() { setBar(isDirty()); }
+
+        form.addEventListener('input',  checkDirty);
+        form.addEventListener('change', checkDirty);
+
+        // ── Watch custom currency dropdown ────────────────────────────────────
+        var customOptions = document.getElementById('customOptions');
+        if (customOptions) {
+            customOptions.addEventListener('click', function (e) {
+                if (e.target.closest('.custom-option')) {
+                    setTimeout(checkDirty, 0);
+                }
+            });
+        }
+
+        // ── Watch language buttons ────────────────────────────────────────────
+        document.querySelectorAll('.lang-btn').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                setTimeout(checkDirty, 0);
+            });
+        });
+
+        resetBtn.addEventListener('click', function () {
+            // Restore all inputs to original snapshot
+            Array.from(form.elements).forEach(function (el) {
+                if (!el.name || !(el.name in original)) return;
+                if (el.type === 'radio') { el.checked = (el.value === original[el.name]); }
+                else if (el.type === 'checkbox') { el.checked = original[el.name]; }
+                else { el.value = original[el.name]; }
+            });
+            // Re-apply theme preview to match restored radio
+            var themeRadio = form.querySelector('input[name="theme"]:checked');
+            if (themeRadio && typeof applyTheme === 'function') applyTheme(themeRadio.value);
+            // Restore currency custom select display
+            if (typeof window._currencyRestoreDisplay === 'function') window._currencyRestoreDisplay();
+            setBar(false);
+        });
+
+        saveBtn.addEventListener('click', function () {
+            // Sync localStorage before submit (form.submit() skips submit event listeners)
+            var langInput = document.getElementById('languageInput');
+            if (langInput) localStorage.setItem('budgetar_language', langInput.value);
+            var themeSelected = form.querySelector('input[name="theme"]:checked');
+            if (themeSelected) localStorage.setItem('budgetar_theme', themeSelected.value);
+            var currencySelect = document.getElementById('currencySelect');
+            if (currencySelect) localStorage.setItem('budgetar_currency', currencySelect.value);
+            form.submit();
+        });
+    })();
+    </script>
+    <script>
+    // ── Change-field modal ────────────────────────────────────────────────────
+    (function () {
+        'use strict';
+
+        var modal      = document.getElementById('changeFieldModal');
+        var step1      = document.getElementById('cfStep1');
+        var step2      = document.getElementById('cfStep2');
+        var titleEl    = document.getElementById('changeFieldTitle');
+        var pwdInput   = document.getElementById('cfPassword');
+        var newInput   = document.getElementById('cfNewValue');
+        var step1Err   = document.getElementById('cfStep1Error');
+        var step2Err   = document.getElementById('cfStep2Error');
+        var step2Hint  = document.getElementById('cfStep2Hint');
+        var verifyBtn  = document.getElementById('cfVerifyBtn');
+        var saveBtn    = document.getElementById('cfSaveBtn');
+        var cancelBtn  = document.getElementById('cfCancelBtn');
+        var backBtn    = document.getElementById('cfBackBtn');
+        var closeBtn   = document.getElementById('changeFieldClose');
+
+        var currentField     = '';
+        var verifiedPassword = '';
+
+        function t(key) {
+            if (window._i18n && window._i18n.T) {
+                var dict = window._i18n.T[window._i18n.lang] || window._i18n.T['lv'];
+                if (dict && dict[key] !== undefined) return dict[key];
+            }
+            return key;
+        }
+
+        function openModal(field) {
+            currentField     = field;
+            verifiedPassword = '';
+            pwdInput.value   = '';
+            newInput.value   = '';
+            step1Err.style.display = 'none';
+            step2Err.style.display = 'none';
+            step1.style.display = '';
+            step2.style.display = 'none';
+
+            titleEl.textContent = field === 'username'
+                ? t('change.modal.title.username')
+                : t('change.modal.title.email');
+
+            modal.classList.add('modal-open');
+            document.body.style.overflow = 'hidden';
+            setTimeout(function () { pwdInput.focus(); }, 60);
+        }
+
+        function closeModal() {
+            modal.classList.remove('modal-open');
+            document.body.style.overflow = '';
+        }
+
+        function showError(el, key) {
+            el.textContent = t(key);
+            el.style.display = '';
+        }
+        function hideError(el) { el.style.display = 'none'; }
+
+        // Bind "Change" buttons (username and email only)
+        document.querySelectorAll('.btn-change-field').forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                var field = this.dataset.field;
+                if (field === 'password') return;
+                openModal(field);
+            });
+        });
+
+        closeBtn.addEventListener('click', closeModal);
+        cancelBtn.addEventListener('click', closeModal);
+        modal.addEventListener('click', function (e) { if (e.target === modal) closeModal(); });
+
+        // Step 1 → verify password via AJAX
+        function doVerify() {
+            hideError(step1Err);
+            var pwd = pwdInput.value.trim();
+            if (!pwd) { showError(step1Err, 'change.err.empty_password'); return; }
+
+            verifyBtn.disabled = true;
+            verifyBtn.querySelector('span').textContent = t('change.modal.checking');
+
+            var fd = new FormData();
+            fd.append('change_field', '1');
+            fd.append('field', currentField);
+            fd.append('verify_password', pwd);
+            fd.append('verify_only', '1');
+            fetch('settings.php', { method: 'POST', body: fd })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    verifyBtn.disabled = false;
+                    verifyBtn.querySelector('span').textContent = t('change.modal.verify');
+
+                    if (!data.success) {
+                        showError(step1Err, 'change.err.wrong_password');
+                        return;
+                    }
+                    // Password is correct — move to step 2
+                    verifiedPassword = pwd;
+                    step1.style.display = 'none';
+                    step2.style.display = '';
+                    step2Hint.textContent = currentField === 'username'
+                        ? t('change.modal.new.username')
+                        : t('change.modal.new.email');
+                    newInput.type = currentField === 'email' ? 'email' : 'text';
+                    newInput.setAttribute('data-i18n-placeholder',
+                        currentField === 'username' ? 'username.placeholder' : 'email.placeholder');
+                    newInput.placeholder = currentField === 'username'
+                        ? t('username.placeholder')
+                        : t('email.placeholder');
+                    hideError(step2Err);
+                    newInput.value = '';
+                    setTimeout(function () { newInput.focus(); }, 60);
+                })
+                .catch(function () {
+                    verifyBtn.disabled = false;
+                    verifyBtn.querySelector('span').textContent = t('change.modal.verify');
+                    showError(step1Err, 'change.err.server');
+                });
+        }
+
+        verifyBtn.addEventListener('click', doVerify);
+        pwdInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') doVerify(); });
+
+        backBtn.addEventListener('click', function () {
+            step2.style.display = 'none';
+            step1.style.display = '';
+            setTimeout(function () { pwdInput.focus(); }, 60);
+        });
+
+        // Step 2 → save new value
+        function doSave() {
+            hideError(step2Err);
+            var val = newInput.value.trim();
+            if (!val) { showError(step2Err, 'change.err.empty_value'); return; }
+
+            saveBtn.disabled = true;
+            saveBtn.querySelector('span').textContent = t('change.modal.saving');
+
+            var fd = new FormData();
+            fd.append('change_field', '1');
+            fd.append('field', currentField);
+            fd.append('verify_password', verifiedPassword);
+            fd.append('new_value', val);
+
+            fetch('settings.php', { method: 'POST', body: fd })
+                .then(function (r) { return r.json(); })
+                .then(function (data) {
+                    saveBtn.disabled = false;
+                    saveBtn.querySelector('span').textContent = t('change.modal.save');
+
+                    if (data.success) {
+                        if (currentField === 'username') {
+                            document.getElementById('displayUsername').textContent = data.new_value;
+                            // Update sidebar avatar letter and name
+                            var avatarEls = document.querySelectorAll('.user-avatar');
+                            avatarEls.forEach(function (el) {
+                                el.textContent = data.new_value.charAt(0).toUpperCase();
+                            });
+                            var nameEls = document.querySelectorAll('.user-name');
+                            nameEls.forEach(function (el) {
+                                el.textContent = data.new_value;
+                            });
+                        } else {
+                            document.getElementById('displayEmail').textContent = data.new_value;
+                        }
+                        closeModal();
+                        showNotification(t('change.success'), 'success');
+                    } else {
+                        var errMap = {
+                            'username_taken': 'change.err.username_taken',
+                            'email_taken':    'change.err.email_taken',
+                            'invalid_email':  'change.err.invalid_email',
+                            'username_short': 'change.err.username_short',
+                            'wrong_password': 'change.err.wrong_password',
+                            'empty_fields':   'change.err.empty_value'
+                        };
+                        showError(step2Err, errMap[data.error] || 'change.err.server');
+                    }
+                })
+                .catch(function () {
+                    saveBtn.disabled = false;
+                    saveBtn.querySelector('span').textContent = t('change.modal.save');
+                    showError(step2Err, 'change.err.server');
+                });
+        }
+
+        saveBtn.addEventListener('click', doSave);
+        newInput.addEventListener('keydown', function (e) { if (e.key === 'Enter') doSave(); });
+    })();
+    </script>
 </body>
 </html>

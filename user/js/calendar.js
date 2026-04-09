@@ -515,16 +515,26 @@ document.addEventListener('keydown', function(e) {
 
 
 
+
 /**
  * Returns an array of budget objects that would be breached by adding
  * `amount` as an expense on `dateStr` (YYYY-MM-DD).
  * Only budgets whose date range covers `dateStr` are considered.
+ * For recurring budgets with specific weekdays, only those days are in scope.
  */
 function getBudgetBreaches(dateStr, amount) {
     if (!activeBudgets || activeBudgets.length === 0) return [];
 
     return activeBudgets.filter(b => {
         if (dateStr < b.start_date || dateStr > b.end_date) return false;
+
+        // Recurring budgets only apply on their configured days of the week.
+        if (b.recurring_days && b.recurring_days !== '') {
+            const allowedDays  = b.recurring_days.split(',').map(Number);
+            const expenseDow   = new Date(dateStr + 'T00:00:00').getDay(); // 0=Sun … 6=Sat
+            if (!allowedDays.includes(expenseDow)) return false;
+        }
+
         return (b.spent + amount) > b.budget_amount;
     });
 }

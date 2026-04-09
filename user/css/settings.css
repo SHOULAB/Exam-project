@@ -335,15 +335,93 @@
     height: 48px;
     border-radius: 10px;
     background: linear-gradient(135deg, rgba(20, 184, 166, 0.2) 0%, rgba(45, 212, 191, 0.1) 100%);
-    border: 2px solid var(--primary);
+    border: none;
     font-weight: 700;
     color: var(--primary);
     font-size: 20px;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 12px rgba(20, 184, 166, 0.15);
 }
 
-/* ── Save actions ────────────────────────────────────────────────────────── */
+/* ── Locked field (read-only with Change button) ─────────────────────────── */
+
+.settings-row-field--locked {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    justify-content: flex-end;
+}
+
+.settings-field-value {
+    font-size: 15px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    opacity: 0.7;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    padding: 11px 16px;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.btn-change-field {
+    flex-shrink: 0;
+    width: auto !important;
+    max-width: none !important;
+    padding: 11px 18px;
+    font-size: 14px;
+    font-weight: 600;
+    background: rgba(20, 184, 166, 0.12);
+    border: none;
+    color: var(--primary);
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.2s ease;
+    white-space: nowrap;
+    line-height: 1.5;
+}
+
+.btn-change-field:hover {
+    background: rgba(20, 184, 166, 0.22);
+    border-color: var(--primary);
+}
+
+/* ── Change-field modal ───────────────────────────────────────────────────── */
+
+.cf-hint {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-bottom: 14px;
+}
+
+.cf-error {
+    margin-top: 8px;
+    font-size: 13px;
+    color: #ef4444;
+    padding: 8px 12px;
+    background: rgba(239, 68, 68, 0.08);
+    border-radius: 8px;
+    border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
+body.light-mode .settings-field-value {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+}
+
+body.light-mode .btn-change-field {
+    background: rgba(20, 184, 166, 0.08);
+    border: none;
+}
+
+body.light-mode .btn-change-field:hover {
+    background: rgba(20, 184, 166, 0.16);
+}
+
+/* ── Save actions (hidden, replaced by unsaved bar) ─────────────────────── */
 
 .settings-actions {
     display: flex;
@@ -355,7 +433,86 @@
     margin-left: 12px;
 }
 
-/* ── Light mode overrides ────────────────────────────────────────────────── */
+/* ── Save actions (hidden, replaced by unsaved bar) ─────────────────────── */
+
+.settings-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+}
+
+.settings-actions .btn + .btn {
+    margin-left: 12px;
+}
+
+/* ── Unsaved changes bar (Discord-style) ─────────────────────────────────── */
+
+.unsaved-bar {
+    position: fixed;
+    bottom: -80px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 14px 20px;
+    background: #1e293b;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+    min-width: 460px;
+    max-width: 90vw;
+    z-index: 900;
+    transition: bottom 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.unsaved-bar.visible {
+    bottom: 28px;
+}
+
+.unsaved-bar-text {
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    white-space: nowrap;
+}
+
+.unsaved-bar-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-shrink: 0;
+}
+
+.unsaved-bar-reset {
+    background: transparent;
+    border: none;
+    color: var(--primary);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 8px;
+    transition: background 0.2s ease;
+}
+
+.unsaved-bar-reset:hover {
+    background: rgba(20, 184, 166, 0.1);
+}
+
+.unsaved-bar-save {
+    font-size: 14px;
+    padding: 9px 20px;
+}
+
+body.light-mode .unsaved-bar {
+    background: #ffffff;
+    border-color: #e2e8f0;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+}
+
+
 /* Covers: style.css, dashboard.css, calendar.css, reports.css, budget.css   */
 
 body.light-mode {
@@ -407,9 +564,8 @@ body.light-mode .custom-option.selected {
 
 body.light-mode .currency-preview {
     background: linear-gradient(135deg, rgba(20, 184, 166, 0.12) 0%, rgba(45, 212, 191, 0.08) 100%);
-    border-color: var(--primary);
+    border: none;
     color: var(--primary);
-    box-shadow: 0 4px 12px rgba(20, 184, 166, 0.12);
 }
 
 body.light-mode .currency-preview:hover {
@@ -467,7 +623,7 @@ body.light-mode .feature-card:hover {
 
 .lang-btn {
     padding: 6px 10px;
-    border: 1.5px solid var(--border);
+    border: none;
     border-radius: 10px;
     background: transparent;
     color: var(--text-secondary);
@@ -490,12 +646,10 @@ body.light-mode .feature-card:hover {
 
 .lang-btn.active {
     background: rgba(20, 184, 166, 0.15);
-    border-color: var(--primary);
     color: var(--primary);
 }
 
 .lang-btn:hover:not(.active) {
-    border-color: var(--primary);
     color: var(--text-primary);
 }
 /* ── dashboard.css: sidebar, layout, stat cards, modals ─────────────────── */

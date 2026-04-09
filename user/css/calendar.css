@@ -508,7 +508,7 @@ body:not(.light-mode) .cal-picker-dropdown {
 .cp-today-btn {
     width: 100%;
     background: transparent;
-    border: 1px solid var(--border);
+    border: none;
     border-radius: 8px;
     color: var(--primary);
     font-size: 14px;
@@ -520,5 +520,4 @@ body:not(.light-mode) .cal-picker-dropdown {
 
 .cp-today-btn:hover {
     background: rgba(20, 184, 166, 0.1);
-    border-color: var(--primary);
 }
