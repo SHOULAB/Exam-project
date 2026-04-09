@@ -1,34 +1,40 @@
 <?php
 session_start();
-if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
-    exit();
-}
 require_once('../../assets/database.php');
 
-$user_id  = $_SESSION['user_id'];
+$is_guest = !isset($_SESSION['user_id']);
+$user_id  = $_SESSION['user_id'] ?? null;
 $username = $_SESSION['username'] ?? '';
 
-// Load theme and language from DB
+// Load theme and language
 $current_theme    = 'dark';
 $current_language = 'lv';
 $_langIsDefault   = true;
 
-$stmt = mysqli_prepare($savienojums,
-    "SELECT setting_key, setting_value FROM BU_user_settings
-     WHERE user_id = ? AND setting_key IN ('theme', 'language')");
-if ($stmt) {
-    mysqli_stmt_bind_param($stmt, "i", $user_id);
-    mysqli_stmt_execute($stmt);
-    $res = mysqli_stmt_get_result($stmt);
-    while ($row = mysqli_fetch_assoc($res)) {
-        if ($row['setting_key'] === 'theme')    $current_theme    = $row['setting_value'];
-        if ($row['setting_key'] === 'language') { $current_language = $row['setting_value']; $_langIsDefault = false; }
+if (!$is_guest) {
+    $stmt = mysqli_prepare($savienojums,
+        "SELECT setting_key, setting_value FROM BU_user_settings
+         WHERE user_id = ? AND setting_key IN ('theme', 'language')");
+    if ($stmt) {
+        mysqli_stmt_bind_param($stmt, "i", $user_id);
+        mysqli_stmt_execute($stmt);
+        $res = mysqli_stmt_get_result($stmt);
+        while ($row = mysqli_fetch_assoc($res)) {
+            if ($row['setting_key'] === 'theme')    $current_theme    = $row['setting_value'];
+            if ($row['setting_key'] === 'language') { $current_language = $row['setting_value']; $_langIsDefault = false; }
+        }
+        mysqli_stmt_close($stmt);
     }
-    mysqli_stmt_close($stmt);
+    $_SESSION['theme']    = $current_theme;
+    $_SESSION['language'] = $current_language;
+} else {
+    // Detect language from browser for guests
+    $_supported = ['lv', 'en'];
+    if (!empty($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
+        $code = strtolower(substr(trim($_SERVER['HTTP_ACCEPT_LANGUAGE']), 0, 2));
+        if (in_array($code, $_supported)) $current_language = $code;
+    }
 }
-$_SESSION['theme']    = $current_theme;
-$_SESSION['language'] = $current_language;
 
 $_traw_settings = json_decode(file_get_contents(__DIR__ . '/translate.json'), true) ?? [];
 $en = ($current_language === 'en');
@@ -47,15 +53,21 @@ $en = ($current_language === 'en');
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
 </head>
 <body class="<?php echo $current_theme === 'light' ? 'light-mode' : ''; ?>">
-    <div class="dashboard-container">
-        <?php include __DIR__ . '/sidebar.php'; ?>
+    <div class="<?php echo $is_guest ? '' : 'dashboard-container'; ?>">
+        <?php if (!$is_guest): ?><?php include __DIR__ . '/sidebar.php'; ?><?php endif; ?>
 
-        <main class="dashboard-main">
+        <main class="<?php echo $is_guest ? '' : 'dashboard-main'; ?>" <?php if ($is_guest): ?>style="max-width:860px; margin:40px auto; padding:0 24px;"<?php endif; ?>>
             <div class="dashboard-header">
                 <h1 class="dashboard-title"><?php echo $en ? 'Terms of Use' : 'Lietošanas noteikumi'; ?></h1>
+                <?php if ($is_guest): ?>
+                <a href="register.php" class="btn btn-secondary">
+                    <i class="fa-solid fa-arrow-left"></i> <?php echo $en ? 'Back to registration' : 'Atpakaļ uz reģistrāciju'; ?>
+                </a>
+                <?php else: ?>
                 <a href="settings.php" class="btn btn-secondary">
                     <i class="fa-solid fa-arrow-left"></i> <?php echo $en ? 'Back to settings' : 'Atpakaļ uz iestatījumiem'; ?>
                 </a>
+                <?php endif; ?>
             </div>
 
             <section class="settings-section privacy-body">
@@ -119,7 +131,7 @@ $en = ($current_language === 'en');
         </main>
     </div>
 
-    <?php include __DIR__ . '/mobile_nav.php'; ?>
+    <?php if (!$is_guest): ?><?php include __DIR__ . '/mobile_nav.php'; ?><?php endif; ?>
 
     <script src="../js/script.js"></script>
     <script>window._i18nData=<?php echo json_encode($_traw_settings); ?>;window._i18nLang=<?php echo json_encode($current_language); ?>;window._i18nIsDefault=<?php echo $_langIsDefault ? 'true' : 'false'; ?>;</script>
