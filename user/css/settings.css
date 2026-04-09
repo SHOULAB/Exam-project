@@ -1,5 +1,44 @@
 /* settings.css — Settings page layout, cards, theme picker, toggle */
 
+/* ── Privacy / Terms of Use content pages ───────────────────────────────── */
+
+.privacy-body {
+    max-width: 780px;
+}
+
+.privacy-body h2 {
+    font-size: 18px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin: 28px 0 10px;
+}
+
+.privacy-body h2:first-child {
+    margin-top: 0;
+}
+
+.privacy-body p,
+.privacy-body ul {
+    font-size: 14px;
+    color: var(--text-secondary);
+    line-height: 1.75;
+    margin-bottom: 12px;
+}
+
+.privacy-body ul {
+    padding-left: 20px;
+}
+
+.privacy-body ul li {
+    margin-bottom: 6px;
+}
+
+.privacy-updated {
+    font-size: 12px;
+    color: var(--text-secondary);
+    margin-bottom: 28px;
+}
+
 /* ── Settings layout ─────────────────────────────────────────────────────── */
 
 .settings-section {

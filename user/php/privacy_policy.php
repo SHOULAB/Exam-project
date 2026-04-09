@@ -1,40 +1,46 @@
 <?php
 session_start();
-if (!isset($_SESSION['user_id'])) {
-    header('Location: login.php');
-    exit();
-}
 require_once('../../assets/database.php');
 
-$user_id  = $_SESSION['user_id'];
+$is_guest = !isset($_SESSION['user_id']);
+$user_id  = $_SESSION['user_id'] ?? null;
 $username = $_SESSION['username'] ?? '';
 
-// Load theme, language from DB
+// Load theme and language
 $current_theme    = 'dark';
 $current_language = 'lv';
 $_langIsDefault   = true;
 
-$stmt = mysqli_prepare($savienojums,
-    "SELECT setting_key, setting_value FROM BU_user_settings
-     WHERE user_id = ? AND setting_key IN ('theme', 'language')");
-if ($stmt) {
-    mysqli_stmt_bind_param($stmt, "i", $user_id);
-    mysqli_stmt_execute($stmt);
-    $res = mysqli_stmt_get_result($stmt);
-    while ($row = mysqli_fetch_assoc($res)) {
-        if ($row['setting_key'] === 'theme')    $current_theme    = $row['setting_value'];
-        if ($row['setting_key'] === 'language') { $current_language = $row['setting_value']; $_langIsDefault = false; }
+if (!$is_guest) {
+    $stmt = mysqli_prepare($savienojums,
+        "SELECT setting_key, setting_value FROM BU_user_settings
+         WHERE user_id = ? AND setting_key IN ('theme', 'language')");
+    if ($stmt) {
+        mysqli_stmt_bind_param($stmt, "i", $user_id);
+        mysqli_stmt_execute($stmt);
+        $res = mysqli_stmt_get_result($stmt);
+        while ($row = mysqli_fetch_assoc($res)) {
+            if ($row['setting_key'] === 'theme')    $current_theme    = $row['setting_value'];
+            if ($row['setting_key'] === 'language') { $current_language = $row['setting_value']; $_langIsDefault = false; }
+        }
+        mysqli_stmt_close($stmt);
     }
-    mysqli_stmt_close($stmt);
+    $_SESSION['theme']    = $current_theme;
+    $_SESSION['language'] = $current_language;
+} else {
+    // Detect language from browser for guests
+    $_supported = ['lv', 'en'];
+    if (!empty($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
+        $code = strtolower(substr(trim($_SERVER['HTTP_ACCEPT_LANGUAGE']), 0, 2));
+        if (in_array($code, $_supported)) $current_language = $code;
+    }
 }
-$_SESSION['theme']    = $current_theme;
-$_SESSION['language'] = $current_language;
 
 $_traw_settings = json_decode(file_get_contents(__DIR__ . '/translate.json'), true) ?? [];
 ?>
 <?php $active_page = 'settings'; ?>
 <!DOCTYPE html>
-<html lang="lv">
+<html lang="<?php echo $en ? 'en' : 'lv'; ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -44,50 +50,24 @@ $_traw_settings = json_decode(file_get_contents(__DIR__ . '/translate.json'), tr
     <link rel="stylesheet" href="../css/settings.css">
     <link rel="icon" href="../../assets/image/logo.png" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
-    <style>
-        .privacy-body {
-            max-width: 780px;
-        }
-        .privacy-body h2 {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--text-primary);
-            margin: 28px 0 10px;
-        }
-        .privacy-body h2:first-child {
-            margin-top: 0;
-        }
-        .privacy-body p,
-        .privacy-body ul {
-            font-size: 14px;
-            color: var(--text-secondary);
-            line-height: 1.75;
-            margin-bottom: 12px;
-        }
-        .privacy-body ul {
-            padding-left: 20px;
-        }
-        .privacy-body ul li {
-            margin-bottom: 6px;
-        }
-        .privacy-updated {
-            font-size: 12px;
-            color: var(--text-secondary);
-            margin-bottom: 28px;
-        }
-    </style>
 </head>
 <?php $en = ($current_language === 'en'); ?>
 <body class="<?php echo $current_theme === 'light' ? 'light-mode' : ''; ?>">
-    <div class="dashboard-container">
-        <?php include __DIR__ . '/sidebar.php'; ?>
+    <div class="<?php echo $is_guest ? '' : 'dashboard-container'; ?>">
+        <?php if (!$is_guest): ?><?php include __DIR__ . '/sidebar.php'; ?><?php endif; ?>
 
-        <main class="dashboard-main">
+        <main class="<?php echo $is_guest ? '' : 'dashboard-main'; ?>" <?php if ($is_guest): ?>style="max-width:860px; margin:40px auto; padding:0 24px;"<?php endif; ?>>
             <div class="dashboard-header">
                 <h1 class="dashboard-title"><?php echo $en ? 'Privacy Policy' : 'Privātuma politika'; ?></h1>
+                <?php if ($is_guest): ?>
+                <a href="register.php" class="btn btn-secondary">
+                    <i class="fa-solid fa-arrow-left"></i> <?php echo $en ? 'Back to registration' : 'Atpakaļ uz reģistrāciju'; ?>
+                </a>
+                <?php else: ?>
                 <a href="settings.php" class="btn btn-secondary">
                     <i class="fa-solid fa-arrow-left"></i> <?php echo $en ? 'Back to settings' : 'Atpakaļ uz iestatījumiem'; ?>
                 </a>
+                <?php endif; ?>
             </div>
 
             <section class="settings-section privacy-body">
@@ -112,6 +92,7 @@ $_traw_settings = json_decode(file_get_contents(__DIR__ . '/translate.json'), tr
 
                 <h2><?php echo $en ? '3. Data Storage' : '3. Datu glabāšana'; ?></h2>
                 <p><?php echo $en ? 'All data is stored in a secure database. Access is restricted and protected by authentication. When an account is deleted, all associated data is permanently removed.' : 'Visi dati tiek glabāti drošā datubāzē. Piekļuve ir ierobežota un aizsargāta ar autentifikāciju. Dzēšot kontu, visi ar to saistītie dati tiek neatgriezeniski dzēsti.'; ?></p>
+                <p><?php echo $en ? 'Your financial data (transactions, budgets and settings) is stored encrypted and is strictly private — it can only be viewed by you. No administrator or third party has access to your financial records.' : 'Jūsu finanšu dati (darījumi, budžeti un iestatījumi) tiek glabāti šifrēti un ir stingri privāti — tos var aplūkot tikai jūs. Nevienam administratoram vai trešajai pusei nav piekļuves jūsu finanšu datiem.'; ?></p>
 
                 <h2><?php echo $en ? '4. Cookies' : '4. Sīkdatnes'; ?></h2>
                 <p><?php echo $en ? 'Budgetar uses session cookies to maintain your login state. If you choose the "Remember me" option, a secure remember-me token cookie is stored. Cookies are not used for tracking or advertising purposes.' : 'Budgetar izmanto sesijas sīkdatnes, lai uzturētu jūsu pieteikšanās stāvokli. Ja izvēlaties opciju "Atcerēties mani", tiek uzglabāta drošas atcerēšanās pilnvaras sīkdatne. Sīkdatnes netiek izmantotas izsekošanai vai reklāmas nolūkiem.'; ?></p>
@@ -133,7 +114,7 @@ $_traw_settings = json_decode(file_get_contents(__DIR__ . '/translate.json'), tr
         </main>
     </div>
 
-    <?php include __DIR__ . '/mobile_nav.php'; ?>
+    <?php if (!$is_guest): ?><?php include __DIR__ . '/mobile_nav.php'; ?><?php endif; ?>
 
     <script src="../js/script.js"></script>
     <script>window._i18nData=<?php echo json_encode($_traw_settings); ?>;window._i18nLang=<?php echo json_encode($current_language); ?>;window._i18nIsDefault=<?php echo $_langIsDefault ? 'true' : 'false'; ?>;</script>

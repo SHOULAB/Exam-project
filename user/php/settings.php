@@ -446,6 +446,19 @@ if ($stmt) {
                             </a>
                         </div>
                     </div>
+                    <div class="settings-divider"></div>
+                    <div class="settings-row">
+                        <div class="settings-row-info">
+                            <span class="settings-row-label" data-i18n="info.terms.label">Lietošānas noteikumi</span>
+                            <span class="settings-row-desc" data-i18n="info.terms.desc">Pakalpojuma lietošānas nosacījumi un ierobežojumi</span>
+                        </div>
+                        <div class="settings-row-field">
+                            <a href="lietosanas_noteikumi.php" class="btn btn-secondary">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                <span data-i18n="info.terms.btn">Skatīt</span>
+                            </a>
+                        </div>
+                    </div>
                 </div>
             </section>
 

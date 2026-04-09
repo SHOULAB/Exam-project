@@ -197,7 +197,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="form-options">
                     <label class="checkbox-label">
                         <input type="checkbox" name="privacy" class="checkbox-input" required>
-                        <span><span data-i18n="reg.privacy">Piekrītu</span> <a href="#" class="link" data-i18n="reg.privacy.link">privātuma politikai</a></span>
+                        <span><span data-i18n="reg.privacy">Piekrītu</span> <a href="privacy_policy.php" class="link" target="_blank" data-i18n="reg.privacy.link">privātuma politikai</a></span>
+                    </label>
+                    <label class="checkbox-label">
+                        <input type="checkbox" name="terms" class="checkbox-input" required>
+                        <span><span data-i18n="reg.terms">Piekrītu</span> <a href="lietosanas_noteikumi.php" class="link" target="_blank" data-i18n="reg.terms.link">lietošanas noteikumiem</a></span>
                     </label>
                 </div>
 
