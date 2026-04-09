@@ -1,3 +1,28 @@
+// ─── Budget search ────────────────────────────────────────────────────────────
+
+document.addEventListener('DOMContentLoaded', function () {
+    const searchInput = document.getElementById('budgetSearchInput');
+    if (!searchInput) return;
+
+    searchInput.addEventListener('input', function () {
+        const query = this.value.toLowerCase().trim();
+        const cards = document.querySelectorAll('.budget-card');
+        const noResults = document.getElementById('budgetNoResults');
+        const grid = document.querySelector('.budgets-grid');
+        let visibleCount = 0;
+
+        cards.forEach(function (card) {
+            const title = card.dataset.budgetTitle || '';
+            const matches = title.includes(query);
+            card.style.display = matches ? '' : 'none';
+            if (matches) visibleCount++;
+        });
+
+        if (noResults) noResults.style.display = visibleCount === 0 ? 'flex' : 'none';
+        if (grid) grid.style.display = visibleCount === 0 ? 'none' : '';
+    });
+});
+
 // ─── Modal helpers ───────────────────────────────────────────────────────────
 
 function openAddModal() {

@@ -630,7 +630,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             'addExpense'      => $_t['cal.modal.add.expense']       ?? 'Pievienot izdevumu',
             'recurIncome'     => $_t['cal.modal.recurring.income']  ?? 'Ikmēneša ienākums (atkārtosies katru mēnesi)',
             'recurExpense'    => $_t['cal.modal.recurring.expense'] ?? 'Ikmēneša izdevums (atkārtosies katru mēnesi)',
-            'warnTitle'       => $_t['cal.warn.title']              ?? '⚠️ Brīdinājums!',
+            'warnTitle'       => $_t['cal.warn.title']              ?? '<i class="fa-solid fa-triangle-exclamation"></i> Brīdinājums!',
             'warnText'        => $_t['cal.warn.text']               ?? 'Šis izdevums pārsniegs tavus mēneša ienākumus!',
             'warnMonthIncome' => $_t['cal.warn.month.income']       ?? 'Mēneša ienākumi:',
             'warnCurExpense'  => $_t['cal.warn.cur.expense']        ?? 'Pašreizējie izdevumi:',
@@ -651,7 +651,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
             'bwCancel'        => $_t['cal.bw.cancel']               ?? 'Atcelt',
             'bwConfirm'       => $_t['cal.bw.confirm']              ?? 'Jā, pievienot',
             'bwSubtitleFmt'   => $_t['cal.bw.subtitle.fmt']          ?? 'Šis izdevums pārsniegs %s',
-            'pickerToday'    => $_t['cal.picker.today']           ?? 'Today',
+            'pickerToday'    => $_t['cal.picker.today']           ?? 'Šodien',
             'monthNames'      => $month_names_php,
         ]); ?>;
     </script>

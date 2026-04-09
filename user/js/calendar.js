@@ -412,42 +412,67 @@ function attachCalendarNavHandlers() {
     });
 }
 
+function submitTransactionAjax(form) {
+    const formData = new FormData(form);
+    formData.append('ajax', 1);
+
+    fetch('calendar.php', {
+        method: 'POST',
+        headers: { 'X-Requested-With': 'XMLHttpRequest' },
+        credentials: 'same-origin',
+        body: formData
+    })
+    .then(response => {
+        if (!response.ok) throw new Error('Failed to submit transaction');
+        return response.json();
+    })
+    .then(data => {
+        if (data.success) {
+            closeTransactionModal();
+            const savedDay = window._dayModalOpenDay;
+            loadCalendarMonth(currentMonth, currentYear, false, function() {
+                if (savedDay) openDayModal(savedDay, currentMonth, currentYear);
+            });
+        } else {
+            form.dataset.skipAjax = '1';
+            form.submit();
+        }
+    })
+    .catch(() => {
+        form.dataset.skipAjax = '1';
+        form.submit();
+    });
+}
+
 function handleTransactionFormSubmit(e) {
     if (e.defaultPrevented) return;
     const form = e.target;
     if (!(form instanceof HTMLFormElement)) return;
     if (form.dataset.skipAjax === '1') return;
+
     if (form.querySelector('input[name="add_income"], input[name="add_expense"], input[name="add_transaction"]')) {
         e.preventDefault();
-        const formData = new FormData(form);
-        formData.append('ajax', 1);
 
-        fetch('calendar.php', {
-            method: 'POST',
-            headers: { 'X-Requested-With': 'XMLHttpRequest' },
-            credentials: 'same-origin',
-            body: formData
-        })
-        .then(response => {
-            if (!response.ok) throw new Error('Failed to submit transaction');
-            return response.json();
-        })
-        .then(data => {
-            if (data.success) {
-                closeTransactionModal();
-                const savedDay = window._dayModalOpenDay;
-                loadCalendarMonth(currentMonth, currentYear, false, function() {
-                    if (savedDay) openDayModal(savedDay, currentMonth, currentYear);
-                });
-            } else {
-                form.dataset.skipAjax = '1';
-                form.submit();
+        // Run expense-specific validation before submitting
+        const typeField = document.getElementById('transaction_type');
+        if (typeField && typeField.value === 'expense') {
+            const expenseAmount = parseFloat(document.getElementById('transaction_amount').value) || 0;
+            const expenseDate   = document.getElementById('transaction_date').value;
+
+            const newTotalExpense = monthlyExpense + expenseAmount;
+            if (monthlyIncome > 0 && newTotalExpense > monthlyIncome) {
+                showWarningModal(expenseAmount, newTotalExpense);
+                return;
             }
-        })
-        .catch(() => {
-            form.dataset.skipAjax = '1';
-            form.submit();
-        });
+
+            const breachedBudgets = getBudgetBreaches(expenseDate, expenseAmount);
+            if (breachedBudgets.length > 0) {
+                showBudgetWarningModal(expenseAmount, expenseDate, breachedBudgets);
+                return;
+            }
+        }
+
+        submitTransactionAjax(form);
         return;
     }
 
@@ -456,8 +481,6 @@ function handleTransactionFormSubmit(e) {
         showDeleteConfirm(() => submitDeleteForm(form));
         return;
     }
-
-    return;
 }
 
 window.addEventListener('DOMContentLoaded', function() {
@@ -490,36 +513,7 @@ document.addEventListener('keydown', function(e) {
 });
 
 
-// ─── Expense form validation ──────────────────────────────────────────────────
 
-document.addEventListener('DOMContentLoaded', function() {
-    const transactionForm = document.getElementById('transactionForm');
-
-    if (transactionForm) {
-        transactionForm.addEventListener('submit', function(e) {
-            const typeField = document.getElementById('transaction_type');
-            if (!typeField || typeField.value !== 'expense') return;
-
-            const expenseAmount = parseFloat(document.getElementById('transaction_amount').value) || 0;
-            const expenseDate   = document.getElementById('transaction_date').value;
-
-            // 1. Check monthly income exceed
-            const newTotalExpense = monthlyExpense + expenseAmount;
-            if (newTotalExpense > monthlyIncome) {
-                e.preventDefault();
-                showWarningModal(expenseAmount, newTotalExpense);
-                return;
-            }
-
-            // 2. Check if any active budget would be exceeded by this expense
-            const breachedBudgets = getBudgetBreaches(expenseDate, expenseAmount);
-            if (breachedBudgets.length > 0) {
-                e.preventDefault();
-                showBudgetWarningModal(expenseAmount, expenseDate, breachedBudgets);
-            }
-        });
-    }
-});
 
 /**
  * Returns an array of budget objects that would be breached by adding
@@ -631,11 +625,8 @@ function closeBudgetWarningModal() {
 function confirmBudgetExpense() {
     closeBudgetWarningModal();
     const form = document.getElementById('transactionForm');
-    if (form) {
-        const newForm = form.cloneNode(true);
-        form.parentNode.replaceChild(newForm, form);
-        newForm.submit();
-    }
+    if (!form) return;
+    submitTransactionAjax(form);
 }
 
 /** Simple HTML escape helper */
@@ -718,11 +709,8 @@ function closeWarningModal() {
 function confirmExpense() {
     closeWarningModal();
     const form = document.getElementById('transactionForm');
-    if (form) {
-        const newForm = form.cloneNode(true);
-        form.parentNode.replaceChild(newForm, form);
-        newForm.submit();
-    }
+    if (!form) return;
+    submitTransactionAjax(form);
 }
 
 

@@ -373,6 +373,23 @@ if ($budgets_result) {
 }
 mysqli_stmt_close($stmt);
 
+// ─── Sort: active/upcoming first (by start_date asc), expired last (by end_date desc) ──
+$today_ts = time();
+usort($budgets, function ($a, $b) use ($today_ts) {
+    $a_expired = strtotime($a['end_date']) < $today_ts;
+    $b_expired = strtotime($b['end_date']) < $today_ts;
+
+    if ($a_expired !== $b_expired) {
+        return $a_expired ? 1 : -1; // expired sinks to bottom
+    }
+    if ($a_expired) {
+        // Both expired: most recently expired first
+        return strtotime($b['end_date']) - strtotime($a['end_date']);
+    }
+    // Both active/upcoming: soonest start_date first
+    return strtotime($a['start_date']) - strtotime($b['start_date']);
+});
+
 // ─── Summary stats ────────────────────────────────────────────────────────────
 $total_budgets       = count($budgets);
 $active_budgets      = 0;
@@ -411,9 +428,17 @@ $total_remaining = $total_budget_amount - $total_spent;
         <main class="dashboard-main">
             <div class="dashboard-header">
                 <h1 class="dashboard-title" data-i18n="budget.page.title">Budžetu pārvaldība</h1>
-                <button class="btn btn-primary" onclick="openAddModal()">
-                    <i class="fa-solid fa-plus"></i> <span data-i18n="budget.add.btn">Pievienot budžetu</span>
-                </button>
+                <div class="dashboard-header-actions">
+                    <?php if (!empty($budgets)): ?>
+                    <div class="budget-search-bar">
+                        <i class="fa-solid fa-magnifying-glass"></i>
+                        <input type="text" id="budgetSearchInput" placeholder="Meklēt pēc nosaukuma…" data-i18n-placeholder="budget.search.placeholder" autocomplete="off">
+                    </div>
+                    <?php endif; ?>
+                    <button class="btn btn-primary" onclick="openAddModal()">
+                        <i class="fa-solid fa-plus"></i> <span data-i18n="budget.add.btn">Pievienot budžetu</span>
+                    </button>
+                </div>
             </div>
 
             <?php if ($error): ?>
@@ -459,6 +484,11 @@ $total_remaining = $total_budget_amount - $total_spent;
                 </div>
             </div>
 
+            <div id="budgetNoResults" class="budget-no-results" style="display:none;">
+                <i class="fa-solid fa-magnifying-glass" style="font-size:48px; opacity:0.3; margin-bottom:16px;"></i>
+                <p data-i18n="budget.search.noresults">Nav atrasts neviens budžets.</p>
+            </div>
+
             <?php if (empty($budgets)): ?>
                 <div class="calendar-container" style="text-align:center; padding:80px 40px;">
                     <div style="font-size:64px; margin-bottom:20px; opacity:0.3;">
@@ -497,7 +527,7 @@ $total_remaining = $total_budget_amount - $total_spent;
                             $progress_class = 'progress-safe';
                         }
                     ?>
-                        <div class="budget-card">
+                        <div class="budget-card" data-budget-title="<?php echo strtolower(htmlspecialchars($budget['budget_name'])); ?>">
                             <div class="budget-card-header">
                                 <div>
                                     <div class="budget-card-title">

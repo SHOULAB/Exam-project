@@ -1,5 +1,59 @@
 /* budget.css — Budget page specific styles */
 
+/* ── Budget search bar ───────────────────────────────────────────────────── */
+
+.dashboard-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.budget-search-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px 14px;
+    transition: border-color 0.2s ease;
+    width: 240px;
+}
+
+.budget-search-bar:focus-within {
+    border-color: var(--primary);
+}
+
+.budget-search-bar i {
+    color: var(--text-secondary);
+    font-size: 13px;
+    flex-shrink: 0;
+}
+
+.budget-search-bar input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    outline: none;
+    color: var(--text-primary);
+    font-size: 14px;
+    min-width: 0;
+}
+
+.budget-search-bar input::placeholder {
+    color: var(--text-secondary);
+}
+
+.budget-no-results {
+    text-align: center;
+    padding: 60px 40px;
+    color: var(--text-secondary);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+}
+
 /* ── Budget cards grid ───────────────────────────────────────────────────── */
 
 .budgets-grid {
