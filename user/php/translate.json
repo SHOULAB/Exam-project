@@ -36,6 +36,11 @@
     "account.delete.btn":     "Dzēst kontu",
     "btn.save":               "Saglabāt izmaiņas",
     "btn.change":             "Mainīt",
+    "info.title":             "Informācija",
+    "info.subtitle":          "Juridiskā informācija un privātuma politika",
+    "info.privacy.label":     "Privātuma politika",
+    "info.privacy.desc":      "Uzziniet, kā mēs apkopojam un izmantojam jūsu datus",
+    "info.privacy.btn":       "Skatīt",
 
     "settings.saved": "Iestatījumi saglabāti veiksmīgi!",
     "settings.reset": "Jūsu konta dati ir atiestatīti. Varat sākt no jauna.",
@@ -368,6 +373,11 @@
     "account.delete.btn":     "Delete account",
     "btn.save":               "Save changes",
     "btn.change":             "Change",
+    "info.title":             "Information",
+    "info.subtitle":          "Legal information and privacy policy",
+    "info.privacy.label":     "Privacy Policy",
+    "info.privacy.desc":      "Learn how we collect and use your data",
+    "info.privacy.btn":       "View",
 
     "settings.saved": "Settings saved successfully!",
     "settings.reset": "Your account data has been reset. You can start fresh.",

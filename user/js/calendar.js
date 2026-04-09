@@ -512,10 +512,6 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-
-
-
-
 /**
  * Returns an array of budget objects that would be breached by adding
  * `amount` as an expense on `dateStr` (YYYY-MM-DD).

@@ -422,6 +422,33 @@ if ($stmt) {
                 </div>
             <?php endif; ?>
 
+            <!-- ── Information ──────────────────────────────────────────────── -->
+            <section class="settings-section">
+                <div class="settings-section-header">
+                    <div class="settings-section-icon">
+                        <i class="fa-solid fa-circle-info"></i>
+                    </div>
+                    <div>
+                        <h2 class="settings-section-title" data-i18n="info.title">Informācija</h2>
+                        <p class="settings-section-subtitle" data-i18n="info.subtitle">Juridiskā informācija un privātuma politika</p>
+                    </div>
+                </div>
+                <div class="settings-card">
+                    <div class="settings-row">
+                        <div class="settings-row-info">
+                            <span class="settings-row-label" data-i18n="info.privacy.label">Privātuma politika</span>
+                            <span class="settings-row-desc" data-i18n="info.privacy.desc">Uzziniet, kā mēs apkopojam un izmantojam jūsu datus</span>
+                        </div>
+                        <div class="settings-row-field">
+                            <a href="privacy_policy.php" class="btn btn-secondary">
+                                <i class="fa-solid fa-arrow-up-right-from-square"></i>
+                                <span data-i18n="info.privacy.btn">Skatīt</span>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             <!-- ── Appearance & Currency ────────────────────────────────────────── -->
             <section class="settings-section">
                 <div class="settings-section-header">
@@ -677,7 +704,7 @@ if ($stmt) {
                         </button>
                     </div>
                 </form>
-            </section>
+
         </main>
     </div>
 
