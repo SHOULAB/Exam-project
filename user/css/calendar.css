@@ -251,6 +251,17 @@
     .calendar-header    { margin-bottom: 16px; }
     .calendar-month     { font-size: 18px; }
     .calendar-nav       { padding: 8px 14px; font-size: 14px; }
+    .calendar-nav[data-direction="prev"] {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .calendar-nav[data-direction="next"] {
+        display: flex;
+        flex-direction: column;
+        align-items: flex-end;
+        text-align: right;
+    }
 
     /* Switch from 7-column grid to vertical list */
     .calendar-grid      { display: flex; flex-direction: column; gap: 6px; }

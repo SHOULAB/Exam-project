@@ -978,9 +978,33 @@ body.light-mode .settings-section-icon {
         gap: 16px;
     }
 
+    .settings-row-field {
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        justify-content: flex-start;
+    }
+
+    .settings-row-field .form-input,
+    .settings-row-field button,
+    .settings-row-field .btn {
+        max-width: 100%;
+        width: 100%;
+        justify-content: center;
+    }
+
     .theme-toggle-group { width: 100%; justify-content: center; }
     .theme-preview      { width: 130px; height: 86px; }
 
     .settings-actions { justify-content: stretch; }
     .settings-actions .btn { width: 100%; justify-content: center; }
+
+    .currency-selector {
+        width: 100%;
+    }
+
+    .currency-selector .custom-select {
+        flex: 1;
+        min-width: 0;
+    }
 }

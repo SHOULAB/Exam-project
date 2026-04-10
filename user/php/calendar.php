@@ -488,8 +488,9 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
 
             <div class="calendar-container">
                 <div class="calendar-header">
-                    <a href="?month=<?php echo $prev_month; ?>&year=<?php echo $prev_year; ?>" class="calendar-nav" data-month="<?php echo $prev_month; ?>" data-year="<?php echo $prev_year; ?>" data-direction="prev" data-i18n="cal.nav.prev">
-                        ← Iepriekšējais
+                    <a href="?month=<?php echo $prev_month; ?>&year=<?php echo $prev_year; ?>" class="calendar-nav" data-month="<?php echo $prev_month; ?>" data-year="<?php echo $prev_year; ?>" data-direction="prev">
+                        <span class="cal-nav-arrow">←</span>
+                        <span data-i18n="cal.nav.prev">Iepriekšējais</span>
                     </a>
                     <div class="cal-month-picker-wrap">
                         <button type="button" class="cal-picker-btn" id="calPickerToggle" aria-label="Select month and year">
@@ -502,8 +503,9 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                         </button>
                         <div class="cal-picker-dropdown" id="calPickerDropdown"></div>
                     </div>
-                    <a href="?month=<?php echo $next_month; ?>&year=<?php echo $next_year; ?>" class="calendar-nav" data-month="<?php echo $next_month; ?>" data-year="<?php echo $next_year; ?>" data-direction="next" data-i18n="cal.nav.next">
-                        Nākamais →
+                    <a href="?month=<?php echo $next_month; ?>&year=<?php echo $next_year; ?>" class="calendar-nav" data-month="<?php echo $next_month; ?>" data-year="<?php echo $next_year; ?>" data-direction="next">
+                        <span class="cal-nav-arrow">→</span>
+                        <span data-i18n="cal.nav.next">Nākamais</span>
                     </a>
                 </div>
 
