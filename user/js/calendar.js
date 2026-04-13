@@ -722,21 +722,6 @@ function confirmExpense() {
 
 // ─── Animations ───────────────────────────────────────────────────────────────
 
-document.addEventListener('DOMContentLoaded', function() {
-    const statCards = document.querySelectorAll('.stat-card');
-    statCards.forEach((card, index) => {
-        setTimeout(() => {
-            card.style.opacity = '0';
-            card.style.transform = 'translateY(20px)';
-            setTimeout(() => {
-                card.style.transition = 'all 0.5s ease-out';
-                card.style.opacity = '1';
-                card.style.transform = 'translateY(0)';
-            }, 50);
-        }, index * 100);
-    });
-});
-
 const calendarDays = document.querySelectorAll('.calendar-day:not(.calendar-day-empty)');
 calendarDays.forEach(day => {
     day.addEventListener('mouseenter', function() {
