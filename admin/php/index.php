@@ -86,12 +86,12 @@ $_t    = $_traw[$_lang] ?? $_traw['lv'] ?? [];
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($_t['dashboard.page.title'] ?? 'Dashboard'); ?> - Budgetar</title>
+    <title>Budgetar</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="icon" href="../../assets/image/logo.png" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
 </head>
-<body>
+<body class="<?php echo (($_SESSION['theme'] ?? 'dark') === 'light') ? 'light-mode' : ''; ?>">
     <div class="admin-container">
         <?php $active_page = 'dashboard'; include 'sidebar.php'; ?>
 

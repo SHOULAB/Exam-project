@@ -108,8 +108,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $_SESSION['email']    = $user_email;
                     $_SESSION['role']     = $user_role ?? 'user';
 
-                    mysqli_stmt_close($stmt);
-
                     // Update last login
                     $ll = mysqli_prepare($savienojums, "UPDATE BU_users SET last_login = NOW() WHERE id = ?");
                     if ($ll) { mysqli_stmt_bind_param($ll, "i", $user_id); mysqli_stmt_execute($ll); mysqli_stmt_close($ll); }

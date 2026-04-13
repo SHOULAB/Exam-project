@@ -4,14 +4,14 @@
     "~~~ sidebar ~~~": "",
 
     "sidebar.admin.panel":        "Admin Panel",
-    "sidebar.dashboard":          "Dashboard",
+    "sidebar.dashboard":          "Panelis",
     "sidebar.users":              "Lietotāji",
     "sidebar.settings":           "Iestatījumi",
     "sidebar.user.panel":         "User Panel",
 
     "~~~ index.php (dashboard) ~~~": "",
 
-    "dashboard.page.title":       "Admin Dashboard",
+    "dashboard.page.title":       "Admin Panelis",
     "dashboard.stat.total.users": "Kopā lietotāji",
     "dashboard.stat.total.budget": "Kopējie budžēti",
     "dashboard.stat.tx":          "Transakcijas",
@@ -70,6 +70,9 @@
     "users.err.invalid.email":    "Nederīgs e-pasta formāts!",
     "users.err.empty.fields":     "Lietotājvārds un e-pasts nedrīkst būt tukši!",
     "users.err.invalid.role":     "Nederīga loma!",
+    "users.err.no.permission":    "Nav tiesību veikt šo darbību!",
+    "users.toggle.hide.inactive":  "Slēpt deaktivizētos",
+    "users.toggle.show.all":       "Rādīt visus",
 
     "~~~ settings.php ~~~": "",
 
@@ -215,6 +218,9 @@
     "users.err.invalid.email":    "Invalid email format!",
     "users.err.empty.fields":     "Username and email must not be empty!",
     "users.err.invalid.role":     "Invalid role!",
+    "users.err.no.permission":    "You do not have permission to perform this action!",
+    "users.toggle.hide.inactive":  "Hide deactivated",
+    "users.toggle.show.all":       "Show all",
 
     "~~~ settings.php ~~~": "",
 

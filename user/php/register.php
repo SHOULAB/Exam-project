@@ -84,9 +84,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 mysqli_stmt_bind_param($stmt_insert, "sss", $username, $email, $hashedPassword);
                 
                 if (mysqli_stmt_execute($stmt_insert)) {
-                    $success = $_t['reg.success'] ?? 'Reģistrācija veiksmīga! Tagad vari ielogoties.';
-                    // Redirect to login after 2 seconds
-                    header("refresh:2;url=login.php");
+                    $new_user_id = mysqli_insert_id($savienojums);
+
+                    // Auto-login the new user
+                    $_SESSION['user_id']  = $new_user_id;
+                    $_SESSION['username'] = $username;
+                    $_SESSION['email']    = $email;
+                    $_SESSION['role']     = 'user';
+                    $_SESSION['theme']    = 'dark';
+
+                    // Update last login
+                    $ll = mysqli_prepare($savienojums, "UPDATE BU_users SET last_login = NOW() WHERE id = ?");
+                    if ($ll) { mysqli_stmt_bind_param($ll, "i", $new_user_id); mysqli_stmt_execute($ll); mysqli_stmt_close($ll); }
+
+                    header('Location: calendar.php');
+                    exit();
                 } else {
                     $error = $_t['reg.err.insert'] ?? 'Kļūda reģistrācijas laikā. Lūdzu mēģinājiet vēlāk.';
                 }

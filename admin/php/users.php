@@ -16,6 +16,19 @@ $success = '';
 $error = '';
 $is_ajax = !empty($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) === 'xmlhttprequest';
 
+$_viewer_role = strtolower($_SESSION['role'] ?? 'user');
+
+// Can the current viewer act on a target user's role?
+function canActOn(string $target_role, string $viewer_role): bool {
+    if ($viewer_role === 'administrator') {
+        return $target_role !== 'administrator';
+    }
+    if ($viewer_role === 'moderator') {
+        return $target_role === 'user';
+    }
+    return false;
+}
+
 // user edit
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (isset($_POST['action']) && isset($_POST['user_id'])) {
@@ -23,7 +36,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $action = $_POST['action'];
 
         if ($action === 'deactivate') {
-            if (isset($_SESSION['user_id']) && $user_id == $_SESSION['user_id']) {
+            // Fetch target role for permission check
+            $tr = mysqli_fetch_assoc(mysqli_query($savienojums, "SELECT role FROM BU_users WHERE id = $user_id"));
+            if (!$tr || !canActOn($tr['role'], $_viewer_role)) {
+                $error = $_t['users.err.no.permission'] ?? 'Nav tiesību veikt šo darbību!';
+            } elseif (isset($_SESSION['user_id']) && $user_id == $_SESSION['user_id']) {
                 $error = $_t['users.err.self.deactivate'] ?? 'Jūs nevarat deāktivēt savu kontu!';
             } else {
                 $stmt = mysqli_prepare($savienojums, "UPDATE BU_users SET is_active = 0 WHERE id = ?");
@@ -39,6 +56,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if ($action === 'activate') {
+            $tr = mysqli_fetch_assoc(mysqli_query($savienojums, "SELECT role FROM BU_users WHERE id = $user_id"));
+            if (!$tr || !canActOn($tr['role'], $_viewer_role)) {
+                $error = $_t['users.err.no.permission'] ?? 'Nav tiesību veikt šo darbību!';
+            } else {
             $stmt = mysqli_prepare($savienojums, "UPDATE BU_users SET is_active = 1 WHERE id = ?");
             mysqli_stmt_bind_param($stmt, "i", $user_id);
             if (mysqli_stmt_execute($stmt)) {
@@ -47,9 +68,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = $_t['users.err.self.deactivate'] ?? 'Kļūda aktivējot lietotāju!';
             }
             mysqli_stmt_close($stmt);
+            }
         }
 
         if ($action === 'edit') {
+            $tr = mysqli_fetch_assoc(mysqli_query($savienojums, "SELECT role FROM BU_users WHERE id = $user_id"));
+            if (!$tr || !canActOn($tr['role'], $_viewer_role)) {
+                $error = $_t['users.err.no.permission'] ?? 'Nav tiesību veikt šo darbību!';
+            } else {
             $new_username = trim($_POST['username'] ?? '');
             $new_email    = trim($_POST['email'] ?? '');
             $new_role     = $_POST['role'] ?? 'user';
@@ -83,10 +109,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     mysqli_stmt_close($stmt);
                 }
             }
+            } // end permission check
         }
 
         if ($action === 'delete') {
-            if (isset($_SESSION['user_id']) && $user_id == $_SESSION['user_id']) {
+            $tr = mysqli_fetch_assoc(mysqli_query($savienojums, "SELECT role, is_active FROM BU_users WHERE id = $user_id"));
+            if (!$tr || !canActOn($tr['role'], $_viewer_role)) {
+                $error = $_t['users.err.no.permission'] ?? 'Nav tiesību veikt šo darbību!';
+            } elseif (isset($_SESSION['user_id']) && $user_id == $_SESSION['user_id']) {
                 $error = $_t['users.err.self.delete'] ?? 'Jūs nevarat dzēst savu kontu!';
             } else {
                 // Only allow deleting deactivated accounts
@@ -142,9 +172,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // search bar + pagination
-$search       = isset($_GET['search']) ? trim($_GET['search']) : '';
-$per_page     = 10;
-$current_page = max(1, (int)($_GET['page'] ?? 1));
+$search        = isset($_GET['search']) ? trim($_GET['search']) : '';
+$hide_inactive = isset($_GET['hide_inactive']) && $_GET['hide_inactive'] === '1';
+$per_page      = 10;
+$current_page  = max(1, (int)($_GET['page'] ?? 1));
 
 // COUNT total matching rows
 $count_query  = "SELECT COUNT(*) FROM BU_users WHERE 1=1";
@@ -157,6 +188,10 @@ if (!empty($search)) {
     $params[]      = $search_param;
     $params[]      = $search_param;
     $types        .= "ss";
+}
+
+if ($hide_inactive) {
+    $count_query .= " AND is_active = 1";
 }
 
 if (!empty($params)) {
@@ -187,6 +222,10 @@ if (!empty($search)) {
     $types        .= "ss";
 }
 
+if ($hide_inactive) {
+    $query .= " AND is_active = 1";
+}
+
 $query .= " ORDER BY FIELD(role, 'administrator', 'moderator', 'user'), created_at DESC LIMIT ? OFFSET ?";
 $params[] = $per_page;
 $params[] = $offset;
@@ -211,12 +250,12 @@ mysqli_stmt_close($stmt);
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?php echo htmlspecialchars($_t['users.page.title'] ?? 'Lietotāju pārvaldība'); ?> - Budgetar</title>
+    <title>Budgetar</title>
     <link rel="stylesheet" href="../css/style.css">
     <link rel="icon" href="../../assets/image/logo.png" type="image/png">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
 </head>
-<body>
+<body class="<?php echo (($_SESSION['theme'] ?? 'dark') === 'light') ? 'light-mode' : ''; ?>">
     <div class="admin-container">
         <?php $active_page = 'users'; include 'sidebar.php'; ?>
 
@@ -249,8 +288,21 @@ mysqli_stmt_close($stmt);
                             value="<?php echo htmlspecialchars($search); ?>"
                         >
                         <input type="hidden" name="page" value="1">
+                        <?php if ($hide_inactive): ?><input type="hidden" name="hide_inactive" value="1"><?php endif; ?>
                     </form>
                 </div>
+                <?php
+                    $toggle_params = array_filter([
+                        'search'        => $search,
+                        'hide_inactive' => $hide_inactive ? '' : '1',
+                        'page'          => '1',
+                    ]);
+                    $toggle_url = '?' . http_build_query($toggle_params);
+                ?>
+                <a href="<?php echo $toggle_url; ?>" class="toggle-btn <?php echo $hide_inactive ? 'toggle-btn--active' : ''; ?>" data-i18n="<?php echo $hide_inactive ? 'users.toggle.show.all' : 'users.toggle.hide.inactive'; ?>">
+                    <i class="fa-solid <?php echo $hide_inactive ? 'fa-eye' : 'fa-eye-slash'; ?>"></i>
+                    <?php echo $hide_inactive ? ($_t['users.toggle.show.all'] ?? 'Rādīt visus') : ($_t['users.toggle.hide.inactive'] ?? 'Slēpt deaktivizētos'); ?>
+                </a>
             </div>
 
             <div class="users-table-container">
@@ -305,6 +357,7 @@ mysqli_stmt_close($stmt);
                                     <td class="td-muted"><?php echo $user['last_login'] ? date('d.m.Y H:i', strtotime($user['last_login'])) : '—'; ?></td>
                                     <td>
                                         <div class="action-buttons">
+                                            <?php if (canActOn($user['role'], $_viewer_role)): ?>
                                             <button class="tbl-btn tbl-btn--edit"
                                                 title="<?php echo htmlspecialchars($_t['users.edit.title'] ?? 'Rediģēt'); ?>"
                                                 onclick="openEditModal(<?php echo $user['id']; ?>, '<?php echo htmlspecialchars(addslashes($user['username'])); ?>', '<?php echo htmlspecialchars(addslashes($user['email'])); ?>', '<?php echo $user['role']; ?>')"
@@ -328,6 +381,9 @@ mysqli_stmt_close($stmt);
                                                 <i class="fa-solid fa-trash"></i>
                                             </button>
                                             <?php endif; ?>
+                                            <?php else: ?>
+                                            <span class="td-muted">—</span>
+                                            <?php endif; ?>
                                         </div>
                                     </td>
                                 </tr>
@@ -338,7 +394,7 @@ mysqli_stmt_close($stmt);
 
                 <?php if ($total_pages > 1): ?>
                 <?php
-                    $base_url = '?' . http_build_query(array_filter(['search' => $search]));
+                    $base_url = '?' . http_build_query(array_filter(['search' => $search, 'hide_inactive' => $hide_inactive ? '1' : '']));
                     $sep      = strpos($base_url, '?') !== false && strlen($base_url) > 1 ? '&' : '?';
                     if ($base_url === '?') { $base_url = ''; $sep = '?'; }
                 ?>
