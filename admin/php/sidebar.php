@@ -41,7 +41,7 @@
                 <div class="user-role"><?php echo htmlspecialchars($_SESSION['role'] ?? 'administrator'); ?></div>
             </div>
             <a href="../../user/php/calendar.php" class="user-logout" title="Atpakaļ uz lietotni">
-                <i class="fa-solid fa-arrow-left"></i>
+                <i class="fas fa-sign-out-alt"></i>
             </a>
         </div>
     </div>

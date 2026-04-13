@@ -80,6 +80,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             }
         }
 
+        if ($action === 'delete') {
+            if (isset($_SESSION['user_id']) && $user_id == $_SESSION['user_id']) {
+                $error = 'Jūs nevarat dzēst savu kontu!';
+            } else {
+                // Only allow deleting deactivated accounts
+                $chk = mysqli_prepare($savienojums, "SELECT is_active FROM BU_users WHERE id = ?");
+                mysqli_stmt_bind_param($chk, "i", $user_id);
+                mysqli_stmt_execute($chk);
+                $chk_res = mysqli_stmt_get_result($chk);
+                $chk_row = mysqli_fetch_assoc($chk_res);
+                mysqli_stmt_close($chk);
+
+                if (!$chk_row || $chk_row['is_active']) {
+                    $error = 'Var dzēst tikai deāktivētus kontus!';
+                } else {
+                    $stmt = mysqli_prepare($savienojums, "DELETE FROM BU_users WHERE id = ? AND is_active = 0");
+                    mysqli_stmt_bind_param($stmt, "i", $user_id);
+                    if (mysqli_stmt_execute($stmt)) {
+                        $success = 'Lietotājs veiksmīgi dzēsts!';
+                    } else {
+                        $error = 'Kļūda dzēšot lietotāju!';
+                    }
+                    mysqli_stmt_close($stmt);
+                }
+            }
+        }
+
         if ($action === 'toggle_role') {
             $stmt = mysqli_prepare($savienojums, "SELECT role FROM BU_users WHERE id = ?");
             mysqli_stmt_bind_param($stmt, "i", $user_id);
@@ -258,6 +285,10 @@ $total_users = count($users);
                                                 onclick="activateUser(<?php echo $user['id']; ?>)">
                                                 <i class="fa-solid fa-circle-check"></i>
                                             </button>
+                                            <button type="button" class="tbl-btn tbl-btn--delete" title="Dzēst"
+                                                onclick="openDeleteModal(<?php echo $user['id']; ?>, '<?php echo htmlspecialchars(addslashes($user['username'])); ?>')">
+                                                <i class="fa-solid fa-trash"></i>
+                                            </button>
                                             <?php endif; ?>
                                         </div>
                                     </td>
@@ -335,6 +366,20 @@ $total_users = count($users);
         </div>
     </div>
 
+    <!-- Delete confirmation modal -->
+    <div id="deleteModal" class="adm-modal" style="display:none;">
+        <div class="adm-modal-box">
+            <div class="adm-modal-icon"><i class="fa-solid fa-trash"></i></div>
+            <h2 class="adm-modal-title">Dzēst kontu?</h2>
+            <p class="adm-modal-desc">Vai tiešām vēlies <strong>neatgriezeniski dzēst</strong> lietotāju <strong id="deleteUsername"></strong>? Visi konta dati tiks izdzēsti un to nebūs iespējams atjaunot.</p>
+            <input type="hidden" id="deleteUserId">
+            <div class="adm-modal-actions">
+                <button type="button" class="btn btn-secondary" onclick="closeDeleteModal()">Atcelt</button>
+                <button type="button" class="btn btn-danger" onclick="confirmDelete()">Dzēst</button>
+            </div>
+        </div>
+    </div>
+
     <script>
     // ── Toast ─────────────────────────────────────────────────────
     function showToast(message, type) {
@@ -402,6 +447,15 @@ $total_users = count($users);
                 activateBtn.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
                 activateBtn.onclick = (function(id) { return function() { activateUser(id); }; })(userId);
                 banBtn.replaceWith(activateBtn);
+
+                var deleteBtn = document.createElement('button');
+                deleteBtn.type = 'button';
+                deleteBtn.className = 'tbl-btn tbl-btn--delete';
+                deleteBtn.title = 'Dzēst';
+                deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+                var uname = row.dataset.username;
+                deleteBtn.onclick = (function(id, un) { return function() { openDeleteModal(id, un); }; })(userId, uname);
+                activateBtn.after(deleteBtn);
             }
         });
     });
@@ -413,19 +467,45 @@ $total_users = count($users);
             row.classList.remove('row-deactivated');
             var badge = row.querySelector('.badge-deactivated');
             if (badge) badge.remove();
-            var activateBtn = row.querySelector('.tbl-btn--activate');
-            if (activateBtn) {
-                var username = row.dataset.username;
-                var banBtn = document.createElement('button');
-                banBtn.type = 'button';
-                banBtn.className = 'tbl-btn tbl-btn--delete';
-                banBtn.title = 'Deāktivēt';
-                banBtn.innerHTML = '<i class="fa-solid fa-ban"></i>';
-                banBtn.onclick = (function(id, uname) { return function() { openDeactivateModal(id, uname); }; })(userId, username);
-                activateBtn.replaceWith(banBtn);
+            var actionBtns = row.querySelector('.action-buttons');
+            // Remove activate + delete buttons
+            actionBtns.querySelectorAll('.tbl-btn--activate, .tbl-btn--delete').forEach(function(b) { b.remove(); });
+            var username = row.dataset.username;
+            var banBtn = document.createElement('button');
+            banBtn.type = 'button';
+            banBtn.className = 'tbl-btn tbl-btn--delete';
+            banBtn.title = 'Deāktivēt';
+            banBtn.innerHTML = '<i class="fa-solid fa-ban"></i>';
+            banBtn.onclick = (function(id, uname) { return function() { openDeactivateModal(id, uname); }; })(userId, username);
+            actionBtns.appendChild(banBtn);
+        });
+    }
+
+    function openDeleteModal(userId, username) {
+        document.getElementById('deleteUserId').value = userId;
+        document.getElementById('deleteUsername').textContent = username;
+        document.getElementById('deleteModal').style.display = 'flex';
+    }
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').style.display = 'none';
+    }
+    function confirmDelete() {
+        var userId = document.getElementById('deleteUserId').value;
+        sendAction({ action: 'delete', user_id: userId }, function() {
+            closeDeleteModal();
+            var row = document.querySelector('tr[data-user-id="' + userId + '"]');
+            if (row) row.remove();
+            // decrement result count
+            var countEl = document.querySelector('.table-count');
+            if (countEl) {
+                var n = parseInt(countEl.textContent) - 1;
+                countEl.textContent = n + ' rezultāti';
             }
         });
     }
+    document.getElementById('deleteModal').addEventListener('click', function(e) {
+        if (e.target === this) closeDeleteModal();
+    });
 
     function openEditModal(userId, username, email, role) {
         document.getElementById('editUserId').value = userId;
