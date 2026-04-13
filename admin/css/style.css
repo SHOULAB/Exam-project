@@ -830,6 +830,60 @@ tr.row-deactivated .user-avatar {
     background: rgba(20, 184, 166, 0.08);
 }
 
+/* ── Pagination ─────────────────────────────────────────────────────────────── */
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 20px 24px;
+    border-top: 1px solid var(--border);
+}
+
+.pg-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 36px;
+    height: 36px;
+    padding: 0 10px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-primary);
+    background: var(--bg-light);
+    border: 1px solid var(--border);
+    text-decoration: none;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    cursor: pointer;
+}
+
+.pg-btn:hover:not(.pg-btn--active):not(.pg-btn--disabled) {
+    background: var(--border);
+    border-color: var(--primary);
+    color: var(--primary);
+}
+
+.pg-btn--active {
+    background: var(--primary);
+    border-color: var(--primary);
+    color: #fff;
+    cursor: default;
+}
+
+.pg-btn--disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.pg-ellipsis {
+    color: var(--text-secondary);
+    font-size: 14px;
+    padding: 0 4px;
+    user-select: none;
+}
+
 /* Wide modal variant (edit form) */
 .adm-modal-box--wide {
     max-width: 460px;

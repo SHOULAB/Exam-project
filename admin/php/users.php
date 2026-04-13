@@ -141,31 +141,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 
-// search bar
-$search = isset($_GET['search']) ? trim($_GET['search']) : '';
+// search bar + pagination
+$search       = isset($_GET['search']) ? trim($_GET['search']) : '';
+$per_page     = 10;
+$current_page = max(1, (int)($_GET['page'] ?? 1));
 
-$query = "SELECT id, username, email, role, created_at, last_login, is_active FROM BU_users WHERE 1=1";
-$params = [];
-$types = "";
+// COUNT total matching rows
+$count_query  = "SELECT COUNT(*) FROM BU_users WHERE 1=1";
+$params       = [];
+$types        = "";
 
 if (!empty($search)) {
-    $query .= " AND (username LIKE ? OR email LIKE ?)";
-    $search_param = "%{$search}%";
-    $params[] = $search_param;
-    $params[] = $search_param;
-    $types .= "ss";
+    $count_query .= " AND (username LIKE ? OR email LIKE ?)";
+    $search_param  = "%{$search}%";
+    $params[]      = $search_param;
+    $params[]      = $search_param;
+    $types        .= "ss";
 }
-
-$query .= " ORDER BY FIELD(role, 'administrator', 'moderator', 'user'), created_at DESC";
 
 if (!empty($params)) {
-    $stmt = mysqli_prepare($savienojums, $query);
+    $stmt = mysqli_prepare($savienojums, $count_query);
     mysqli_stmt_bind_param($stmt, $types, ...$params);
     mysqli_stmt_execute($stmt);
-    $result = mysqli_stmt_get_result($stmt);
+    mysqli_stmt_bind_result($stmt, $total_users);
+    mysqli_stmt_fetch($stmt);
+    mysqli_stmt_close($stmt);
 } else {
-    $result = mysqli_query($savienojums, $query);
+    $total_users = (int)mysqli_fetch_row(mysqli_query($savienojums, $count_query))[0];
 }
+
+$total_pages  = max(1, (int)ceil($total_users / $per_page));
+$current_page = min($current_page, $total_pages);
+$offset       = ($current_page - 1) * $per_page;
+
+// Fetch one page of rows
+$query  = "SELECT id, username, email, role, created_at, last_login, is_active FROM BU_users WHERE 1=1";
+$params = [];
+$types  = "";
+
+if (!empty($search)) {
+    $query       .= " AND (username LIKE ? OR email LIKE ?)";
+    $search_param  = "%{$search}%";
+    $params[]      = $search_param;
+    $params[]      = $search_param;
+    $types        .= "ss";
+}
+
+$query .= " ORDER BY FIELD(role, 'administrator', 'moderator', 'user'), created_at DESC LIMIT ? OFFSET ?";
+$params[] = $per_page;
+$params[] = $offset;
+$types   .= "ii";
+
+$stmt = mysqli_prepare($savienojums, $query);
+mysqli_stmt_bind_param($stmt, $types, ...$params);
+mysqli_stmt_execute($stmt);
+$result = mysqli_stmt_get_result($stmt);
 
 $users = [];
 if ($result) {
@@ -174,7 +204,7 @@ if ($result) {
     }
 }
 
-$total_users = count($users);
+mysqli_stmt_close($stmt);
 ?>
 <!DOCTYPE html>
 <html lang="lv">
@@ -218,6 +248,7 @@ $total_users = count($users);
                             placeholder="<?php echo htmlspecialchars($_t['users.search.placeholder'] ?? 'Meklēt lietotājus...'); ?>"
                             value="<?php echo htmlspecialchars($search); ?>"
                         >
+                        <input type="hidden" name="page" value="1">
                     </form>
                 </div>
             </div>
@@ -303,6 +334,46 @@ $total_users = count($users);
                             <?php endforeach; ?>
                         </tbody>
                     </table>
+                <?php endif; ?>
+
+                <?php if ($total_pages > 1): ?>
+                <?php
+                    $base_url = '?' . http_build_query(array_filter(['search' => $search]));
+                    $sep      = strpos($base_url, '?') !== false && strlen($base_url) > 1 ? '&' : '?';
+                    if ($base_url === '?') { $base_url = ''; $sep = '?'; }
+                ?>
+                <div class="pagination">
+                    <a class="pg-btn <?php echo $current_page <= 1 ? 'pg-btn--disabled' : ''; ?>"
+                       <?php if ($current_page > 1): ?>href="<?php echo $base_url . $sep; ?>page=<?php echo $current_page - 1; ?>"<?php endif; ?>>
+                        <i class="fa-solid fa-chevron-left"></i>
+                    </a>
+
+                    <?php
+                    $range   = 2;
+                    $start   = max(1, $current_page - $range);
+                    $end     = min($total_pages, $current_page + $range);
+                    if ($start > 1): ?>
+                        <a class="pg-btn" href="<?php echo $base_url . $sep; ?>page=1">1</a>
+                        <?php if ($start > 2): ?><span class="pg-ellipsis">…</span><?php endif; ?>
+                    <?php endif; ?>
+
+                    <?php for ($p = $start; $p <= $end; $p++): ?>
+                        <a class="pg-btn <?php echo $p === $current_page ? 'pg-btn--active' : ''; ?>"
+                           href="<?php echo $base_url . $sep; ?>page=<?php echo $p; ?>">
+                            <?php echo $p; ?>
+                        </a>
+                    <?php endfor; ?>
+
+                    <?php if ($end < $total_pages): ?>
+                        <?php if ($end < $total_pages - 1): ?><span class="pg-ellipsis">…</span><?php endif; ?>
+                        <a class="pg-btn" href="<?php echo $base_url . $sep; ?>page=<?php echo $total_pages; ?>"><?php echo $total_pages; ?></a>
+                    <?php endif; ?>
+
+                    <a class="pg-btn <?php echo $current_page >= $total_pages ? 'pg-btn--disabled' : ''; ?>"
+                       <?php if ($current_page < $total_pages): ?>href="<?php echo $base_url . $sep; ?>page=<?php echo $current_page + 1; ?>"<?php endif; ?>>
+                        <i class="fa-solid fa-chevron-right"></i>
+                    </a>
+                </div>
                 <?php endif; ?>
             </div>
         </main>
@@ -444,7 +515,8 @@ $total_users = count($users);
             if (!nameSpan.querySelector('.badge-deactivated')) {
                 var badge = document.createElement('span');
                 badge.className = 'badge-deactivated';
-                badge.textContent = 'Deāktivēts';
+                var _d = (window._i18n && window._i18n.T[window._i18n.lang]) || {};
+                badge.textContent = _d['users.badge.deactivated'] || 'Deāktivēts';
                 nameSpan.insertBefore(badge, nameSpan.querySelector('.badge-role'));
             }
             var banBtn = row.querySelector('.tbl-btn--delete');
@@ -452,7 +524,7 @@ $total_users = count($users);
                 var activateBtn = document.createElement('button');
                 activateBtn.type = 'button';
                 activateBtn.className = 'tbl-btn tbl-btn--activate';
-                activateBtn.title = 'Aktivēt';
+                activateBtn.title = (window._i18n && window._i18n.T[window._i18n.lang] && window._i18n.T[window._i18n.lang]['users.activate.title']) || 'Aktivēt';
                 activateBtn.innerHTML = '<i class="fa-solid fa-circle-check"></i>';
                 activateBtn.onclick = (function(id) { return function() { activateUser(id); }; })(userId);
                 banBtn.replaceWith(activateBtn);
@@ -460,7 +532,7 @@ $total_users = count($users);
                 var deleteBtn = document.createElement('button');
                 deleteBtn.type = 'button';
                 deleteBtn.className = 'tbl-btn tbl-btn--delete';
-                deleteBtn.title = 'Dzēst';
+                deleteBtn.title = (window._i18n && window._i18n.T[window._i18n.lang] && window._i18n.T[window._i18n.lang]['users.delete.btn']) || 'Dzēst';
                 deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
                 var uname = row.dataset.username;
                 deleteBtn.onclick = (function(id, un) { return function() { openDeleteModal(id, un); }; })(userId, uname);
@@ -483,7 +555,7 @@ $total_users = count($users);
             var banBtn = document.createElement('button');
             banBtn.type = 'button';
             banBtn.className = 'tbl-btn tbl-btn--delete';
-            banBtn.title = 'Deāktivēt';
+            banBtn.title = (window._i18n && window._i18n.T[window._i18n.lang] && window._i18n.T[window._i18n.lang]['users.deactivate.btn']) || 'Deāktivēt';
             banBtn.innerHTML = '<i class="fa-solid fa-ban"></i>';
             banBtn.onclick = (function(id, uname) { return function() { openDeactivateModal(id, uname); }; })(userId, username);
             actionBtns.appendChild(banBtn);
@@ -508,7 +580,8 @@ $total_users = count($users);
             var countEl = document.querySelector('.table-count');
             if (countEl) {
                 var n = parseInt(countEl.textContent) - 1;
-                countEl.textContent = n + ' rezultāti';
+                var resultsLabel = (window._i18n && window._i18n.T[window._i18n.lang] && window._i18n.T[window._i18n.lang]['users.table.results']) || 'rezultāti';
+                countEl.textContent = n + ' ' + resultsLabel;
             }
         });
     }
