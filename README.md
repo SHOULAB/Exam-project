@@ -27,16 +27,16 @@ The system helps users:
 ## Screenshots
 
 ### Main Page
-![Main Page](https://imgur.com/nfv87ug)
+![Main Page](https://i.imgur.com/nfv87ug.png)
 
 ### Calendar Page
-![Calendar Page](https://imgur.com/6laj3JR)
+![Calendar Page](https://i.imgur.com/6laj3JR.png)
 
 ### Statistics Page
-![Statistics Page](https://imgur.com/EownHGj)
+![Statistics Page](https://i.imgur.com/EownHGj.png)
 
 ### Settings Page
-![Settings Page](https://imgur.com/GkzJx7W)
+![Settings Page](https://i.imgur.com/GkzJx7W.png)
 
 ---
 
