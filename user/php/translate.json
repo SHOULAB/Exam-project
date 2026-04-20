@@ -34,6 +34,15 @@
     "account.delete.label":   "Dzēst kontu",
     "account.delete.desc":    "Šī darbība ir neatgriezeniska — visi dati tiks dzēsti.",
     "account.delete.btn":     "Dzēst kontu",
+
+    "account.confirm.reset.title":          "Apstiprināt konta atiestatīšanu",
+    "account.confirm.delete.title":         "Apstiprināt konta dzēšanu",
+    "account.confirm.reset.desc":           "Vai tiešām vēlaties atiestatīt savu kontu? Tiks noņemti visi budžeti, darījumi un iestatījumi, bet jūsu pieteikšanās dati paliks.",
+    "account.confirm.delete.desc":          "Vai tiešām vēlaties dzēst savu kontu? Šī darbība ir neatgriezeniska un tiks izdzēsti visi jūsu dati.",
+    "account.confirm.password.label":       "Ievadiet paroli",
+    "account.confirm.password.placeholder": "Parole",
+    "account.confirm.password.error":       "Lūdzu ievadiet savu paroli.",
+    "account.confirm.cancel":               "Atcelt",
     "btn.save":               "Saglabāt izmaiņas",
     "btn.change":             "Mainīt",
     "info.title":             "Informācija",
@@ -116,6 +125,11 @@
     "budget.delete.confirm.single":"Vai tiešām vēlies dzēst šo budžetu? Šī darbība nevar tikt atsaukta.",
     "budget.delete.cancel":        "Atcelt",
     "budget.delete.btn":           "Dzēst",
+
+    "budget.status.active":        "Aktīvs",
+    "budget.status.upcoming":      "Gaidāmais",
+    "budget.status.expired":       "Beidzies",
+    "budget.status.warning":       "Brīdinājums",
 
     "~~~ parskati.php ~~~": "",
 
@@ -380,6 +394,15 @@
     "account.delete.label":   "Delete account",
     "account.delete.desc":    "This action is irreversible — all your data will be deleted.",
     "account.delete.btn":     "Delete account",
+
+    "account.confirm.reset.title":          "Confirm account reset",
+    "account.confirm.delete.title":         "Confirm account deletion",
+    "account.confirm.reset.desc":           "Are you sure you want to reset your account? All budgets, transactions and settings will be removed, but your login credentials will remain.",
+    "account.confirm.delete.desc":          "Are you sure you want to delete your account? This action is irreversible and all your data will be deleted.",
+    "account.confirm.password.label":       "Enter password",
+    "account.confirm.password.placeholder": "Password",
+    "account.confirm.password.error":       "Please enter your password.",
+    "account.confirm.cancel":               "Cancel",
     "btn.save":               "Save changes",
     "btn.change":             "Change",
     "info.title":             "Information",
@@ -462,6 +485,11 @@
     "budget.delete.confirm.single":"Are you sure you want to delete this budget? This action cannot be undone.",
     "budget.delete.cancel":        "Cancel",
     "budget.delete.btn":           "Delete",
+
+    "budget.status.active":        "Active",
+    "budget.status.upcoming":      "Upcoming",
+    "budget.status.expired":       "Expired",
+    "budget.status.warning":       "Warning",
 
     "~~~ parskati.php ~~~": "",
 

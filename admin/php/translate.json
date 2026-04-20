@@ -15,7 +15,7 @@
     "dashboard.stat.total.users": "Kopā lietotāji",
     "dashboard.stat.total.budget": "Kopējie budžēti",
     "dashboard.stat.tx":          "Transakcijas",
-    "dashboard.stat.tx.month":    "Transakcijas šomezon",
+    "dashboard.stat.tx.month":    "Transakcijas šomēnes",
     "dashboard.stat.status":      "Sistēmas statuss",
     "dashboard.stat.status.val":  "Online",
 

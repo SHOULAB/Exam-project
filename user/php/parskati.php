@@ -102,15 +102,36 @@ foreach ($monthly_data as $md) {
 }
 
 // --- 3. Recurring vs one-time ---
-$stmt3 = mysqli_prepare($savienojums,
-    "SELECT is_recurring, type, SUM(amount) as total FROM BU_transactions WHERE user_id = ? GROUP BY is_recurring, type");
-mysqli_stmt_bind_param($stmt3, "i", $user_id);
+// A stopped recurring transaction (recurring_stop_date set and in the past) is treated as
+// one-time for the donut so only currently-active recurring amounts are counted as "monthly".
+$_stopColCheck = mysqli_query($savienojums, "SHOW COLUMNS FROM BU_transactions LIKE 'recurring_stop_date'");
+$_hasStopCol   = ($_stopColCheck && mysqli_num_rows($_stopColCheck) > 0);
+
+$_today = date('Y-m-d');
+if ($_hasStopCol) {
+    // Treat any recurring row whose stop date is already past as one-time
+    $stmt3 = mysqli_prepare($savienojums,
+        "SELECT
+             CASE WHEN is_recurring = 1
+                       AND (recurring_stop_date IS NULL OR recurring_stop_date >= ?)
+                  THEN 1 ELSE 0 END AS is_recurring,
+             type,
+             SUM(amount) as total
+         FROM BU_transactions
+         WHERE user_id = ?
+         GROUP BY 1, type");
+    mysqli_stmt_bind_param($stmt3, "si", $_today, $user_id);
+} else {
+    $stmt3 = mysqli_prepare($savienojums,
+        "SELECT is_recurring, type, SUM(amount) as total FROM BU_transactions WHERE user_id = ? GROUP BY is_recurring, type");
+    mysqli_stmt_bind_param($stmt3, "i", $user_id);
+}
 mysqli_stmt_execute($stmt3);
 $res3 = mysqli_stmt_get_result($stmt3);
 $rec = ['recurring_income' => 0, 'recurring_expense' => 0, 'onetime_income' => 0, 'onetime_expense' => 0];
 while ($row = mysqli_fetch_assoc($res3)) {
     $key = ($row['is_recurring'] ? 'recurring' : 'onetime') . '_' . $row['type'];
-    $rec[$key] = floatval($row['total']);
+    $rec[$key] += floatval($row['total']);
 }
 mysqli_stmt_close($stmt3);
 

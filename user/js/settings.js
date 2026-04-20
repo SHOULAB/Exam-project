@@ -221,15 +221,24 @@
         if (document.getElementById(modalId)) return;
 
         const isReset = type === 'reset';
-        const title = isReset ? 'Apstiprināt konta atiestatīšanu' : 'Apstiprināt konta dzēšanu';
+        const T = window._i18n ? (window._i18n.T[window._i18n.lang] || window._i18n.T['lv']) : null;
+
+        const title = isReset
+            ? (T?.['account.confirm.reset.title']  ?? 'Apstiprināt konta atiestatīšanu')
+            : (T?.['account.confirm.delete.title'] ?? 'Apstiprināt konta dzēšanu');
         const description = isReset
-            ? 'Vai tiešām vēlaties atiestatīt savu kontu? Tiks noņemti visi budžeti, darījumi un iestatījumi, bet jūsu pieteikšanās dati paliks.'
-            : 'Vai tiešām vēlaties dzēst savu kontu? Šī darbība ir neatgriezeniska un tiks izdzēsti visi jūsu dati.';
-        const confirmLabel = isReset ? 'Atiestatīt kontu' : 'Dzēst kontu';
+            ? (T?.['account.confirm.reset.desc']  ?? 'Vai tiešām vēlaties atiestatīt savu kontu? Tiks noņemti visi budžeti, darījumi un iestatījumi, bet jūsu pieteikšanās dati paliks.')
+            : (T?.['account.confirm.delete.desc'] ?? 'Vai tiešām vēlaties dzēst savu kontu? Šī darbība ir neatgriezeniska un tiks izdzēsti visi jūsu dati.');
+        const confirmLabel = isReset
+            ? (T?.['account.reset.btn']  ?? 'Atiestatīt kontu')
+            : (T?.['account.delete.btn'] ?? 'Dzēst kontu');
         const confirmClass = 'btn btn-danger';
         const confirmIcon = isReset ? 'fa-solid fa-rotate-right' : 'fa-solid fa-trash-can';
         const actionName = isReset ? 'reset_account' : 'delete_account';
         const passwordName = isReset ? 'reset_password' : 'delete_password';
+        const passwordLabel = T?.['account.confirm.password.label'] ?? 'Ievadiet paroli';
+        const passwordPlaceholder = T?.['account.confirm.password.placeholder'] ?? 'Parole';
+        const cancelLabel = T?.['account.confirm.cancel'] ?? 'Atcelt';
 
         const modal = document.createElement('div');
         modal.id = modalId;
@@ -242,14 +251,14 @@
                 </div>
                 <div class="modal-body">
                     <div class="form-group">
-                        <label for="${modalId}Password" class="form-label">Ievadiet paroli</label>
-                        <input type="password" id="${modalId}Password" class="form-input" placeholder="Parole" autocomplete="current-password">
+                        <label for="${modalId}Password" class="form-label">${passwordLabel}</label>
+                        <input type="password" id="${modalId}Password" class="form-input" placeholder="${passwordPlaceholder}" autocomplete="current-password">
                         <span id="${modalId}PasswordError" class="form-hint" style="color: #ff6b6b; display: none;"></span>
                     </div>
                     <p>${description}</p>
                 </div>
                 <div class="modal-actions">
-                    <button type="button" class="btn btn-secondary" id="${modalId}CancelBtn">Atcelt</button>
+                    <button type="button" class="btn btn-secondary" id="${modalId}CancelBtn">${cancelLabel}</button>
                     <button type="button" class="${confirmClass}" id="${modalId}ConfirmBtn">
                         <i class="${confirmIcon}"></i> ${confirmLabel}
                     </button>
@@ -270,7 +279,8 @@
             const passwordError = modal.querySelector(`#${modalId}PasswordError`);
             if (!passwordInput || !passwordInput.value.trim()) {
                 if (passwordError) {
-                    passwordError.textContent = 'Lūdzu ievadiet savu paroli.';
+                    const T2 = window._i18n ? (window._i18n.T[window._i18n.lang] || window._i18n.T['lv']) : null;
+                    passwordError.textContent = T2?.['account.confirm.password.error'] ?? 'Lūdzu ievadiet savu paroli.';
                     passwordError.style.display = 'block';
                 }
                 passwordInput.focus();

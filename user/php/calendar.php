@@ -614,7 +614,7 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                 <div class="form-group">
                     <label for="transaction_description" class="form-label" data-i18n="cal.modal.desc">Apraksts</label>
                     <input type="text" id="transaction_description" name="transaction_description"
-                        class="form-input" placeholder="Apraksts..." required>
+                        class="form-input" placeholder="Apraksts..." data-i18n-placeholder="cal.modal.desc.placeholder" required>
                 </div>
 
                 <div class="form-group">

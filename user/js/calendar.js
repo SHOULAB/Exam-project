@@ -92,6 +92,7 @@ function openDayModal(day, month, year) {
                        <i class="fa-solid fa-trash"></i>
                    </button>`;
             
+            const currSymbol = getCurrencyTextSymbol(getCurrentCurrency());
             html += `
                 <div class="transaction-item ${typeClass}">
                     <div class="transaction-info">
@@ -100,7 +101,7 @@ function openDayModal(day, month, year) {
                         ${recurringInfo}
                     </div>
                     <div class="transaction-right">
-                        <div class="transaction-amount">${sign}€${parseFloat(transaction.amount).toFixed(2)}</div>
+                        <div class="transaction-amount">${sign}${currSymbol}${parseFloat(transaction.amount).toFixed(2)}</div>
                         ${deleteBtn}
                     </div>
                 </div>

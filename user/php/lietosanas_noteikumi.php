@@ -116,7 +116,7 @@ $en = ($current_language === 'en');
                 <h2><?php echo $en ? '7. Limitation of Liability' : '7. Atbildības ierobežojums'; ?></h2>
                 <p><?php echo $en
                     ? 'To the fullest extent permitted by law, Budgetar shall not be liable for any indirect, incidental, or consequential damages arising from your use of or inability to use the service.'
-                    : 'Ciktāl to pieļauj spēkā esošie tiesību akti, Budgetar neatbild par netiešiem, nejaušiem vai izrietošiem zaudējumiem, kas radušies no pakalpojuma izmantošanas vai nespējas to izmantot.'; ?></p>
+                    : 'Cik tālu to pieļauj spēkā esošie tiesību akti, Budgetar neatbild par netiešiem, nejaušiem vai izrietošiem zaudējumiem, kas radušies no pakalpojuma izmantošanas vai nespējas to izmantot.'; ?></p>
 
                 <h2><?php echo $en ? '8. Changes to Terms' : '8. Noteikumu izmaiņas'; ?></h2>
                 <p><?php echo $en

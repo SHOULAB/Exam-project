@@ -115,6 +115,36 @@ function calcRecurringDatesPHP(string $csv): array {
     ];
 }
 
+// ─── Helper: first occurrence of each selected day within a quarter ─────────────
+// Given "6,0" (Sat, Sun) and a quarter start like "2026-01-01",
+// returns the dates of the first occurrence of each day in that quarter.
+function calcQuarterFirstOccurrences(string $csv, string $qStart): array {
+    $days = array_map('intval', array_filter(explode(',', $csv), fn($d) => $d !== ''));
+    if (empty($days)) {
+        return ['start' => $qStart, 'end' => $qStart];
+    }
+
+    $qStartDt = new DateTime($qStart);
+
+    // Convert JS day index (0=Sun,1=Mon,...,6=Sat) to PHP ISO day (1=Mon,...,7=Sun)
+    $candidates = [];
+    foreach ($days as $jd) {
+        $phpDay = ($jd === 0) ? 7 : $jd;   // Sun→7, Mon→1, …, Sat→6
+        $dt     = clone $qStartDt;
+        $cur    = (int)$dt->format('N');    // 1=Mon … 7=Sun
+        $offset = ($phpDay >= $cur) ? ($phpDay - $cur) : (7 - $cur + $phpDay);
+        $dt->modify("+{$offset} days");
+        $candidates[] = $dt;
+    }
+
+    usort($candidates, fn($a, $b) => $a <=> $b);
+
+    return [
+        'start' => $candidates[0]->format('Y-m-d'),
+        'end'   => end($candidates)->format('Y-m-d'),
+    ];
+}
+
 // ─── Auto-refresh expired recurring budgets ───────────────────────────────────
 function refreshRecurringBudgets($conn, $uid): void {
     // Guard: silently skip if migration columns don't exist yet
@@ -156,6 +186,42 @@ function refreshRecurringBudgets($conn, $uid): void {
 
 refreshRecurringBudgets($savienojums, $user_id);
 
+// ─── Fix existing quarterly budgets that have wrong full-quarter date ranges ──
+function fixQuarterlyBudgetDates($conn, $uid): void {
+    $check = mysqli_query($conn, "SHOW COLUMNS FROM BU_budgets LIKE 'quarter_label'");
+    if (!$check || mysqli_num_rows($check) === 0) return;
+
+    $stmt = mysqli_prepare($conn,
+        "SELECT id, start_date, quarter_label, recurring_days
+         FROM   BU_budgets
+         WHERE  user_id = ? AND quarter_label IS NOT NULL AND quarter_label != ''
+                AND recurring_days IS NOT NULL AND recurring_days != ''");
+    mysqli_stmt_bind_param($stmt, "i", $uid);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $toFix  = [];
+    while ($row = mysqli_fetch_assoc($result)) { $toFix[] = $row; }
+    mysqli_stmt_close($stmt);
+
+    $quarterStarts = ['Q1' => '-01-01', 'Q2' => '-04-01', 'Q3' => '-07-01', 'Q4' => '-10-01'];
+
+    foreach ($toFix as $b) {
+        $ql = $b['quarter_label'];
+        if (!isset($quarterStarts[$ql])) continue;
+        $year   = substr($b['start_date'], 0, 4);
+        $qStart = $year . $quarterStarts[$ql];
+        $dates  = calcQuarterFirstOccurrences($b['recurring_days'], $qStart);
+        if ($dates['start'] === $b['start_date']) continue; // already correct
+        $upd = mysqli_prepare($conn,
+            "UPDATE BU_budgets SET start_date = ?, end_date = ? WHERE id = ?");
+        mysqli_stmt_bind_param($upd, "ssi", $dates['start'], $dates['end'], $b['id']);
+        mysqli_stmt_execute($upd);
+        mysqli_stmt_close($upd);
+    }
+}
+
+fixQuarterlyBudgetDates($savienojums, $user_id);
+
 // ─── Ensure quarterly columns exist (safe migration) ─────────────────────────
 mysqli_query($savienojums, "ALTER TABLE BU_budgets ADD COLUMN IF NOT EXISTS quarter_label VARCHAR(2) NULL DEFAULT NULL");
 mysqli_query($savienojums, "ALTER TABLE BU_budgets ADD COLUMN IF NOT EXISTS recurring_group_id VARCHAR(36) NULL DEFAULT NULL");
@@ -194,6 +260,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action'])) {
             $all_ok   = true;
 
             foreach ($quarters as $q_label => [$q_start, $q_end]) {
+                // Use the first occurrence of the selected weekdays within the quarter
+                $q_dates  = calcQuarterFirstOccurrences($recurring_days, $q_start);
+                $q_start  = $q_dates['start'];
+                $q_end    = $q_dates['end'];
                 $period = 'quarterly';
                 $stmt = mysqli_prepare($savienojums,
                     "INSERT INTO BU_budgets
@@ -529,19 +599,19 @@ $total_remaining = $total_budget_amount - $total_spent;
 
                         if ($is_upcoming) {
                             $status_class   = 'status-upcoming';
-                            $status_text    = 'Gaidāmais';
+                            $status_text    = $_t['budget.status.upcoming'] ?? 'Gaidāmais';
                             $progress_class = 'progress-safe';
                         } elseif (!$is_active) {
                             $status_class   = 'status-expired';
-                            $status_text    = 'Beidzies';
+                            $status_text    = $_t['budget.status.expired'] ?? 'Beidzies';
                             $progress_class = 'progress-danger';
                         } elseif ($percentage >= $budget['warning_threshold']) {
                             $status_class   = 'status-warning';
-                            $status_text    = 'Brīdinājums';
+                            $status_text    = $_t['budget.status.warning'] ?? 'Brīdinājums';
                             $progress_class = 'progress-warning';
                         } else {
                             $status_class   = 'status-active';
-                            $status_text    = 'Aktīvs';
+                            $status_text    = $_t['budget.status.active'] ?? 'Aktīvs';
                             $progress_class = 'progress-safe';
                         }
                     ?>
