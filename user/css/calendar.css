@@ -68,6 +68,11 @@
 .calendar-day-empty   { background: transparent; border: none; cursor: default; }
 .calendar-day-today   { border-color: var(--primary); background: rgba(20, 184, 166, 0.1); }
 .calendar-day-has-data { border-color: var(--secondary); }
+.calendar-day-weekend .calendar-day-number { color: #c07070; }
+
+/* Weekend column headers (S = Saturday, Sv = Sunday) */
+.calendar-weekday:nth-child(6),
+.calendar-weekday:nth-child(7) { color: #c07070; }
 
 .calendar-day-number  { font-weight: 600; font-size: 16px; margin-bottom: 8px; }
 
@@ -295,6 +300,9 @@
     }
 
     .calendar-day-today .calendar-day-number { background: var(--primary); color: white; }
+    /* Keep weekend red on mobile, but today circle overrides it */
+    .calendar-day-weekend .calendar-day-number { color: #c07070; }
+    .calendar-day-today.calendar-day-weekend .calendar-day-number { background: var(--primary); color: white; }
 
     .calendar-day-transactions {
         flex-direction: row;

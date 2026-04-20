@@ -323,6 +323,10 @@ function renderCalendarGrid(data) {
             classes += ' calendar-day-has-data';
         }
 
+        // 1=Mon…7=Sun; firstWeekday is ISO day-of-week for day 1 of this month
+        const dow = ((firstWeekday - 1 + day - 1) % 7) + 1;
+        if (dow >= 6) classes += ' calendar-day-weekend';
+
         dayDiv.className = classes;
         dayDiv.dataset.day = day;
         dayDiv.addEventListener('click', function() {

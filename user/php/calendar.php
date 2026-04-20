@@ -542,10 +542,13 @@ if (isset($_GET['ajax']) && $_GET['ajax'] == '1') {
                     for ($day = 1; $day <= $days_in_month; $day++) {
                         $is_today = ($day == date('j') && $current_month == date('n') && $current_year == date('Y'));
                         $has_transactions = isset($transactions[$day]);
+                        $dow_iso   = (int)date('N', mktime(0, 0, 0, $current_month, $day, $current_year)); // 1=Mon…7=Sun
+                        $is_weekend = ($dow_iso >= 6);
                         
                         $class = 'calendar-day';
                         if ($is_today) $class .= ' calendar-day-today';
                         if ($has_transactions) $class .= ' calendar-day-has-data';
+                        if ($is_weekend) $class .= ' calendar-day-weekend';
                         
                         echo '<div class="' . $class . '" data-day="' . $day . '" onclick="openDayModal(' . $day . ', ' . $current_month . ', ' . $current_year . ')">';
                         echo '<div class="calendar-day-number">' . $day . '</div>';
