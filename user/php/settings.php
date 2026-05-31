@@ -157,6 +157,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_account'])) {
             mysqli_stmt_close($stmt);
         }
 
+        $stmt = mysqli_prepare($savienojums, "DELETE FROM BU_transactions WHERE user_id = ?");
+        if ($stmt) {
+            mysqli_stmt_bind_param($stmt, "i", $user_id);
+            mysqli_stmt_execute($stmt);
+            mysqli_stmt_close($stmt);
+        }
+
+        $stmt = mysqli_prepare($savienojums, "DELETE FROM BU_budgets WHERE user_id = ?");
+        if ($stmt) {
+            mysqli_stmt_bind_param($stmt, "i", $user_id);
+            mysqli_stmt_execute($stmt);
+            mysqli_stmt_close($stmt);
+        }
+
         $stmt = mysqli_prepare($savienojums, "DELETE FROM BU_users WHERE id = ?");
         if ($stmt) {
             mysqli_stmt_bind_param($stmt, "i", $user_id);

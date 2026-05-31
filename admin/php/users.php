@@ -81,8 +81,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             } else {
             $new_username = trim($_POST['username'] ?? '');
             $new_email    = trim($_POST['email'] ?? '');
-            $new_role     = $_POST['role'] ?? 'user';
-            $allowed_roles = ['user', 'moderator', 'administrator'];
+            // Only administrators may change roles; moderators keep the target's existing role
+            if ($_viewer_role === 'administrator') {
+                $new_role = $_POST['role'] ?? 'user';
+                $allowed_roles = ['user', 'moderator'];
+            } else {
+                $new_role = $tr['role']; // preserve existing role
+                $allowed_roles = [$new_role];
+            }
 
             if (empty($new_username) || empty($new_email)) {
                 $error = $_t['users.err.empty.fields'] ?? 'Lietotājvārds un e-pasts nedrīkst būt tukši!';
@@ -133,6 +139,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (!$chk_row || $chk_row['is_active']) {
                     $error = $_t['users.err.active.delete'] ?? 'Var dzēst tikai deāktivētus kontus!';
                 } else {
+                    // Delete related data first (no FK CASCADE on these tables)
+                    $delete_error = '';
+                    foreach (['BU_transactions', 'BU_budgets', 'BU_user_settings'] as $related_table) {
+                        $del = mysqli_prepare($savienojums, "DELETE FROM `{$related_table}` WHERE user_id = ?");
+                        if (!$del) {
+                            $delete_error .= "Prepare failed for {$related_table}: " . mysqli_error($savienojums) . ' | ';
+                            continue;
+                        }
+                        mysqli_stmt_bind_param($del, "i", $user_id);
+                        if (!mysqli_stmt_execute($del)) {
+                            $delete_error .= "Execute failed for {$related_table}: " . mysqli_stmt_error($del) . ' | ';
+                        }
+                        mysqli_stmt_close($del);
+                    }
+                    if ($delete_error) {
+                        $error = 'Kļūda dzēšot saistītos datus: ' . $delete_error;
+                        if ($is_ajax) {
+                            echo json_encode(['success' => false, 'message' => $error]);
+                            exit();
+                        }
+                        // skip user row deletion if related data cleanup failed
+                    } else {
+
                     $stmt = mysqli_prepare($savienojums, "DELETE FROM BU_users WHERE id = ? AND is_active = 0");
                     mysqli_stmt_bind_param($stmt, "i", $user_id);
                     if (mysqli_stmt_execute($stmt)) {
@@ -141,6 +170,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $error = $_t['users.err.self.delete'] ?? 'Kļūda dzēšot lietotāju!';
                     }
                     mysqli_stmt_close($stmt);
+                    } // end: no delete_error
                 }
             }
         }
@@ -469,6 +499,7 @@ mysqli_stmt_close($stmt);
                         <label class="form-label" for="editEmail" data-i18n="users.edit.email.label"><?php echo $_t['users.edit.email.label'] ?? 'E-pasts'; ?></label>
                         <input type="email" id="editEmail" name="email" class="form-input" required>
                     </div>
+                    <?php if ($_viewer_role === 'administrator'): ?>
                     <div class="form-group">
                         <label class="form-label" for="editRole" data-i18n="users.edit.role.label"><?php echo $_t['users.edit.role.label'] ?? 'Loma'; ?></label>
                         <input type="hidden" id="editRole" name="role" value="user">
@@ -480,10 +511,10 @@ mysqli_stmt_close($stmt);
                             <ul class="custom-options" id="editRoleOptions">
                                 <li class="custom-option" data-value="user"><i class="fa-solid fa-user"></i> <?php echo $_t['users.badge.user'] ?? 'Lietotājs'; ?></li>
                                 <li class="custom-option" data-value="moderator"><i class="fa-solid fa-shield"></i> <?php echo $_t['users.badge.moderator'] ?? 'Moderators'; ?></li>
-                                <li class="custom-option" data-value="administrator"><i class="fa-solid fa-shield-halved"></i> <?php echo $_t['users.badge.admin'] ?? 'Administrators'; ?></li>
                             </ul>
                         </div>
                     </div>
+                    <?php endif; ?>
                 </div>
                 <div class="adm-modal-actions">
                     <button type="button" class="btn btn-secondary" onclick="closeEditModal()" data-i18n="users.edit.cancel"><?php echo $_t['users.edit.cancel'] ?? 'Atcelt'; ?></button>
@@ -697,6 +728,7 @@ mysqli_stmt_close($stmt);
     });
 
     // ── Role custom dropdown ─────────────────────────────────────────────────
+    <?php if ($_viewer_role === 'administrator'): ?>
     const roleSelect    = document.getElementById('editRoleSelect');
     const roleInput     = document.getElementById('editRole');
     const roleValue     = document.getElementById('editRoleValue');
@@ -751,6 +783,15 @@ mysqli_stmt_close($stmt);
 
     window.addEventListener('resize', function() { if (roleDropdownOpen) positionRoleOptions(); });
     window.addEventListener('scroll', function() { if (roleDropdownOpen) positionRoleOptions(); }, true);
+    <?php else: ?>
+    // Moderators have no role dropdown — provide safe stubs
+    let roleDropdownOpen = false;
+    function setEditRole(value) {}
+    function closeRoleDropdown() {}
+    document.addEventListener('keydown', function(e) {
+        if (e.key === 'Escape') closeEditModal();
+    });
+    <?php endif; ?>
     </script>
     <?php $active_page = 'users'; include 'mobile_nav.php'; ?>
 </body>
