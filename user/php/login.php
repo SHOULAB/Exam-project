@@ -13,13 +13,15 @@ require_once('../../assets/database.php');
 
 // ─── Language detection ───────────────────────────────────────────────────────
 $_supported   = ['lv', 'en'];
+$_postedLang  = trim($_POST['_lang'] ?? '');
 $_browserLang = 'lv';
 if (!empty($_SERVER['HTTP_ACCEPT_LANGUAGE'])) {
     $code = strtolower(substr(trim($_SERVER['HTTP_ACCEPT_LANGUAGE']), 0, 2));
     if (in_array($code, $_supported)) $_browserLang = $code;
 }
+$_selectedLang = in_array($_postedLang, $_supported) ? $_postedLang : $_browserLang;
 $_traw = json_decode(file_get_contents(__DIR__ . '/translate.json'), true) ?? [];
-$_t    = $_traw[$_browserLang] ?? $_traw['lv'];
+$_t    = $_traw[$_selectedLang] ?? $_traw['lv'];
 
 $error = '';
 
@@ -176,7 +178,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 ?>
 <!DOCTYPE html>
-<html lang="lv">
+<html lang="<?php echo htmlspecialchars($_selectedLang); ?>">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -205,7 +207,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
             <?php endif; ?>
 
-            <form class="auth-form" id="loginForm" method="POST" action="">
+            <form class="auth-form" id="loginForm" method="POST" action="" novalidate>
+                <input type="hidden" name="_lang" id="_lang" value="<?php echo htmlspecialchars($_selectedLang); ?>">
                 <div class="form-group">
                     <label for="email" class="form-label" data-i18n="login.email.label">E-pasts</label>
                     <input
@@ -217,7 +220,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         data-i18n-placeholder="login.email.placeholder"
                         required
                         value="<?php echo isset($_POST['email']) ? htmlspecialchars($_POST['email']) : ''; ?>"
+                        aria-describedby="emailError"
                     >
+                    <span class="form-error" id="emailError" aria-live="polite" hidden></span>
                 </div>
 
                 <div class="form-group">
@@ -283,5 +288,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <script>window._i18nData=<?php echo json_encode($_traw); ?>;window._i18nIsDefault=true;</script>
     <script src="../js/language.js"></script>
     <script src="../js/script.js"></script>
+    <script>
+        (function () {
+            var lang = localStorage.getItem('budgetar_language') || 'lv';
+            var el = document.getElementById('_lang');
+            if (el) el.value = lang;
+        })();
+    </script>
 </body>
 </html>
