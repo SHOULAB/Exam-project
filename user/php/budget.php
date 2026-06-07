@@ -622,7 +622,7 @@ $total_remaining = $total_budget_amount - $total_spent;
                     </div>
                     <?php endif; ?>
                     <button class="btn btn-primary" onclick="openAddModal()">
-                        <i class="fa-solid fa-plus"></i> <span data-i18n="budget.add.btn">Pievienot budžetu</span>
+                        <i class="fa-solid fa-plus"></i>
                     </button>
                 </div>
             </div>

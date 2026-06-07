@@ -65,9 +65,9 @@ $en = ($current_language === 'en');
             <div class="dashboard-header">
                 <h1 class="dashboard-title"><?php echo $en ? 'Terms of Use' : 'Lietošanas noteikumi'; ?></h1>
                 <?php if ($is_guest): ?>
-                <a href="register.php" class="btn btn-secondary">
-                    <i class="fa-solid fa-arrow-left"></i> <?php echo $en ? 'Back to registration' : 'Atpakaļ uz reģistrāciju'; ?>
-                </a>
+                <button onclick="window.close()" class="btn btn-secondary">
+                    <i class="fa-solid fa-xmark"></i> <?php echo $en ? 'Close' : 'Aizvērt'; ?>
+                </button>
                 <?php else: ?>
                 <a href="settings.php" class="btn btn-secondary">
                     <i class="fa-solid fa-arrow-left"></i> <?php echo $en ? 'Back to settings' : 'Atpakaļ uz iestatījumiem'; ?>
